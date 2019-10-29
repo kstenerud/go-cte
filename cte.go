@@ -21,203 +21,232 @@ type CteDecoderCallbacks interface {
   OnUnorderedMapBegin() error
   OnMetadataMapBegin() error
   OnContainerEnd() error
-//  OnBytesBegin(byteCount uint64) error
-//  OnStringBegin(byteCount uint64) error
-//  OnURIBegin(byteCount uint64) error
-//  OnCommentBegin(byteCount uint64) error
-//  OnArrayData(bytes []byte) error
+//  OnBytesBegin() error
+  OnStringBegin() error
+//  OnURIBegin() error
+  OnCommentBegin() error
+  OnArrayData(bytes []byte) error
+  OnArrayEnd() error
 }
 
 
-//line cte.rl:145
+//line cte.rl:212
 
 
 
 
-//line cte.go:38
+//line cte.go:39
 var _cte_actions []byte = []byte{
 	0, 1, 0, 1, 1, 1, 2, 1, 3, 
 	1, 4, 1, 5, 1, 6, 1, 7, 
-	1, 8, 1, 9, 1, 10, 
+	1, 8, 1, 9, 1, 10, 1, 11, 
+	1, 12, 1, 13, 1, 14, 1, 15, 
+	1, 16, 1, 17, 1, 18, 1, 19, 
+	1, 20, 
 }
 
 var _cte_key_offsets []byte = []byte{
-	0, 0, 10, 11, 12, 13, 14, 15, 
-	16, 17, 18, 19, 30, 35, 36, 37, 
-	38, 39, 40, 41, 42, 43, 44, 51, 
-	52, 53, 54, 55, 60, 70, 75, 76, 
-	77, 78, 79, 80, 81, 82, 83, 84, 
-	85, 86, 87, 94, 95, 96, 97, 98, 
-	103, 113, 118, 119, 120, 121, 122, 123, 
-	124, 125, 126, 127, 128, 129, 130, 137, 
-	138, 139, 140, 141, 146, 156, 161, 162, 
-	163, 164, 165, 166, 167, 168, 169, 170, 
-	171, 172, 173, 177, 177, 177, 177, 
+	0, 0, 12, 13, 13, 14, 15, 16, 
+	17, 18, 19, 20, 21, 22, 23, 25, 
+	30, 43, 48, 49, 49, 50, 51, 52, 
+	53, 54, 55, 56, 57, 58, 66, 71, 
+	83, 88, 89, 89, 90, 91, 92, 93, 
+	94, 95, 96, 97, 98, 99, 100, 101, 
+	102, 103, 104, 105, 113, 118, 130, 135, 
+	136, 136, 137, 138, 139, 140, 141, 142, 
+	143, 144, 145, 146, 147, 148, 149, 150, 
+	151, 152, 160, 165, 177, 182, 183, 183, 
+	184, 185, 186, 187, 188, 189, 190, 191, 
+	192, 193, 194, 195, 196, 197, 198, 199, 
+	203, 203, 203, 203, 203, 203, 
 }
 
 var _cte_trans_keys []byte = []byte{
-	13, 32, 60, 91, 102, 110, 116, 123, 
-	9, 10, 97, 108, 115, 101, 105, 108, 
-	114, 117, 101, 13, 32, 60, 91, 93, 
-	102, 110, 116, 123, 9, 10, 13, 32, 
-	93, 9, 10, 97, 108, 115, 101, 105, 
-	108, 114, 117, 101, 13, 32, 102, 116, 
-	125, 9, 10, 97, 108, 115, 101, 13, 
-	32, 61, 9, 10, 13, 32, 60, 91, 
-	102, 110, 116, 123, 9, 10, 13, 32, 
-	125, 9, 10, 97, 108, 115, 101, 105, 
-	108, 114, 117, 101, 114, 117, 101, 13, 
-	32, 62, 102, 116, 9, 10, 97, 108, 
-	115, 101, 13, 32, 61, 9, 10, 13, 
-	32, 60, 91, 102, 110, 116, 123, 9, 
-	10, 13, 32, 62, 9, 10, 97, 108, 
-	115, 101, 105, 108, 114, 117, 101, 114, 
-	117, 101, 13, 32, 41, 102, 116, 9, 
-	10, 97, 108, 115, 101, 13, 32, 61, 
-	9, 10, 13, 32, 60, 91, 102, 110, 
-	116, 123, 9, 10, 13, 32, 41, 9, 
-	10, 97, 108, 115, 101, 105, 108, 114, 
-	117, 101, 114, 117, 101, 13, 32, 9, 
-	10, 
+	13, 32, 34, 47, 60, 91, 102, 110, 
+	116, 123, 9, 10, 47, 97, 108, 115, 
+	101, 105, 108, 114, 117, 101, 10, 34, 
+	92, 34, 92, 110, 114, 116, 13, 32, 
+	34, 47, 60, 91, 93, 102, 110, 116, 
+	123, 9, 10, 13, 32, 93, 9, 10, 
+	47, 97, 108, 115, 101, 105, 108, 114, 
+	117, 101, 13, 32, 34, 102, 116, 125, 
+	9, 10, 13, 32, 61, 9, 10, 13, 
+	32, 34, 47, 60, 91, 102, 110, 116, 
+	123, 9, 10, 13, 32, 125, 9, 10, 
+	47, 97, 108, 115, 101, 105, 108, 114, 
+	117, 101, 97, 108, 115, 101, 114, 117, 
+	101, 13, 32, 34, 62, 102, 116, 9, 
+	10, 13, 32, 61, 9, 10, 13, 32, 
+	34, 47, 60, 91, 102, 110, 116, 123, 
+	9, 10, 13, 32, 62, 9, 10, 47, 
+	97, 108, 115, 101, 105, 108, 114, 117, 
+	101, 97, 108, 115, 101, 114, 117, 101, 
+	13, 32, 34, 41, 102, 116, 9, 10, 
+	13, 32, 61, 9, 10, 13, 32, 34, 
+	47, 60, 91, 102, 110, 116, 123, 9, 
+	10, 13, 32, 41, 9, 10, 47, 97, 
+	108, 115, 101, 105, 108, 114, 117, 101, 
+	97, 108, 115, 101, 114, 117, 101, 13, 
+	32, 9, 10, 
 }
 
 var _cte_single_lengths []byte = []byte{
-	0, 8, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 9, 3, 1, 1, 1, 
-	1, 1, 1, 1, 1, 1, 5, 1, 
-	1, 1, 1, 3, 8, 3, 1, 1, 
+	0, 10, 1, 0, 1, 1, 1, 1, 
+	1, 1, 1, 1, 1, 1, 2, 5, 
+	11, 3, 1, 0, 1, 1, 1, 1, 
+	1, 1, 1, 1, 1, 6, 3, 10, 
+	3, 1, 0, 1, 1, 1, 1, 1, 
 	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 5, 1, 1, 1, 1, 3, 
-	8, 3, 1, 1, 1, 1, 1, 1, 
-	1, 1, 1, 1, 1, 1, 5, 1, 
-	1, 1, 1, 3, 8, 3, 1, 1, 
+	1, 1, 1, 6, 3, 10, 3, 1, 
+	0, 1, 1, 1, 1, 1, 1, 1, 
 	1, 1, 1, 1, 1, 1, 1, 1, 
-	1, 1, 2, 0, 0, 0, 0, 
+	1, 6, 3, 10, 3, 1, 0, 1, 
+	1, 1, 1, 1, 1, 1, 1, 1, 
+	1, 1, 1, 1, 1, 1, 1, 2, 
+	0, 0, 0, 0, 0, 0, 
 }
 
 var _cte_range_lengths []byte = []byte{
 	0, 1, 0, 0, 0, 0, 0, 0, 
-	0, 0, 0, 1, 1, 0, 0, 0, 
-	0, 0, 0, 0, 0, 0, 1, 0, 
-	0, 0, 0, 1, 1, 1, 0, 0, 
 	0, 0, 0, 0, 0, 0, 0, 0, 
-	0, 0, 1, 0, 0, 0, 0, 1, 
 	1, 1, 0, 0, 0, 0, 0, 0, 
-	0, 0, 0, 0, 0, 0, 1, 0, 
-	0, 0, 0, 1, 1, 1, 0, 0, 
+	0, 0, 0, 0, 0, 1, 1, 1, 
+	1, 0, 0, 0, 0, 0, 0, 0, 
 	0, 0, 0, 0, 0, 0, 0, 0, 
-	0, 0, 1, 0, 0, 0, 0, 
+	0, 0, 0, 1, 1, 1, 1, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 1, 1, 1, 1, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 1, 
+	0, 0, 0, 0, 0, 0, 
 }
 
 var _cte_index_offsets []int16 = []int16{
-	0, 0, 10, 12, 14, 16, 18, 20, 
-	22, 24, 26, 28, 39, 44, 46, 48, 
-	50, 52, 54, 56, 58, 60, 62, 69, 
-	71, 73, 75, 77, 82, 92, 97, 99, 
-	101, 103, 105, 107, 109, 111, 113, 115, 
-	117, 119, 121, 128, 130, 132, 134, 136, 
-	141, 151, 156, 158, 160, 162, 164, 166, 
-	168, 170, 172, 174, 176, 178, 180, 187, 
-	189, 191, 193, 195, 200, 210, 215, 217, 
-	219, 221, 223, 225, 227, 229, 231, 233, 
-	235, 237, 239, 243, 244, 245, 246, 
-}
-
-var _cte_indicies []byte = []byte{
-	0, 0, 2, 3, 4, 5, 6, 7, 
-	0, 1, 8, 1, 9, 1, 10, 1, 
-	11, 1, 12, 1, 13, 1, 14, 1, 
-	15, 1, 16, 1, 18, 18, 19, 20, 
-	21, 22, 23, 24, 25, 18, 17, 18, 
-	18, 21, 18, 17, 26, 1, 27, 1, 
-	28, 1, 29, 1, 30, 1, 31, 1, 
-	32, 1, 33, 1, 34, 1, 35, 35, 
-	36, 37, 38, 35, 17, 39, 1, 40, 
-	1, 41, 1, 42, 1, 43, 43, 44, 
-	43, 1, 44, 44, 45, 46, 47, 48, 
-	49, 50, 44, 1, 35, 35, 38, 35, 
-	17, 51, 1, 52, 1, 53, 1, 54, 
-	1, 55, 1, 56, 1, 57, 1, 58, 
-	1, 59, 1, 60, 1, 61, 1, 62, 
-	1, 63, 63, 64, 65, 66, 63, 17, 
-	67, 1, 68, 1, 69, 1, 70, 1, 
-	71, 71, 72, 71, 1, 72, 72, 73, 
-	74, 75, 76, 77, 78, 72, 1, 63, 
-	63, 64, 63, 17, 79, 1, 80, 1, 
-	81, 1, 82, 1, 83, 1, 84, 1, 
-	85, 1, 86, 1, 87, 1, 88, 1, 
-	89, 1, 90, 1, 91, 91, 92, 93, 
-	94, 91, 17, 95, 1, 96, 1, 97, 
-	1, 98, 1, 99, 99, 100, 99, 1, 
-	100, 100, 101, 102, 103, 104, 105, 106, 
-	100, 1, 91, 91, 92, 91, 17, 107, 
-	1, 108, 1, 109, 1, 110, 1, 111, 
-	1, 112, 1, 113, 1, 114, 1, 115, 
-	1, 116, 1, 117, 1, 118, 1, 119, 
-	119, 119, 17, 17, 17, 17, 17, 
+	0, 0, 12, 14, 15, 17, 19, 21, 
+	23, 25, 27, 29, 31, 33, 35, 38, 
+	44, 57, 62, 64, 65, 67, 69, 71, 
+	73, 75, 77, 79, 81, 83, 91, 96, 
+	108, 113, 115, 116, 118, 120, 122, 124, 
+	126, 128, 130, 132, 134, 136, 138, 140, 
+	142, 144, 146, 148, 156, 161, 173, 178, 
+	180, 181, 183, 185, 187, 189, 191, 193, 
+	195, 197, 199, 201, 203, 205, 207, 209, 
+	211, 213, 221, 226, 238, 243, 245, 246, 
+	248, 250, 252, 254, 256, 258, 260, 262, 
+	264, 266, 268, 270, 272, 274, 276, 278, 
+	282, 283, 284, 285, 286, 287, 
 }
 
 var _cte_trans_targs []byte = []byte{
-	1, 0, 82, 82, 2, 6, 8, 82, 
-	3, 4, 5, 82, 7, 82, 9, 10, 
-	82, 0, 11, 12, 12, 83, 13, 17, 
-	19, 12, 14, 15, 16, 12, 18, 12, 
-	20, 21, 12, 22, 23, 39, 84, 24, 
-	25, 26, 27, 27, 28, 29, 29, 30, 
-	34, 36, 29, 31, 32, 33, 29, 35, 
-	29, 37, 38, 29, 40, 41, 27, 42, 
-	85, 43, 59, 44, 45, 46, 47, 47, 
-	48, 49, 49, 50, 54, 56, 49, 51, 
-	52, 53, 49, 55, 49, 57, 58, 49, 
-	60, 61, 47, 62, 86, 63, 79, 64, 
-	65, 66, 67, 67, 68, 69, 69, 70, 
-	74, 76, 69, 71, 72, 73, 69, 75, 
-	69, 77, 78, 69, 80, 81, 67, 82, 
+	1, 1, 95, 2, 95, 95, 4, 8, 
+	10, 95, 1, 0, 3, 0, 95, 5, 
+	0, 6, 0, 7, 0, 95, 0, 9, 
+	0, 95, 0, 11, 0, 12, 0, 95, 
+	0, 96, 13, 97, 15, 14, 14, 14, 
+	14, 14, 14, 14, 16, 16, 17, 18, 
+	17, 17, 98, 20, 24, 26, 17, 16, 
+	0, 16, 16, 98, 16, 0, 19, 0, 
+	17, 21, 0, 22, 0, 23, 0, 17, 
+	0, 25, 0, 17, 0, 27, 0, 28, 
+	0, 17, 0, 29, 29, 30, 44, 48, 
+	99, 29, 0, 30, 30, 31, 30, 0, 
+	31, 31, 32, 33, 32, 32, 35, 39, 
+	41, 32, 31, 0, 29, 29, 99, 29, 
+	0, 34, 0, 32, 36, 0, 37, 0, 
+	38, 0, 32, 0, 40, 0, 32, 0, 
+	42, 0, 43, 0, 32, 0, 45, 0, 
+	46, 0, 47, 0, 30, 0, 49, 0, 
+	50, 0, 30, 0, 51, 51, 52, 100, 
+	66, 70, 51, 0, 52, 52, 53, 52, 
+	0, 53, 53, 54, 55, 54, 54, 57, 
+	61, 63, 54, 53, 0, 51, 51, 100, 
+	51, 0, 56, 0, 54, 58, 0, 59, 
+	0, 60, 0, 54, 0, 62, 0, 54, 
+	0, 64, 0, 65, 0, 54, 0, 67, 
+	0, 68, 0, 69, 0, 52, 0, 71, 
+	0, 72, 0, 52, 0, 73, 73, 74, 
+	101, 88, 92, 73, 0, 74, 74, 75, 
+	74, 0, 75, 75, 76, 77, 76, 76, 
+	79, 83, 85, 76, 75, 0, 73, 73, 
+	101, 73, 0, 78, 0, 76, 80, 0, 
+	81, 0, 82, 0, 76, 0, 84, 0, 
+	76, 0, 86, 0, 87, 0, 76, 0, 
+	89, 0, 90, 0, 91, 0, 74, 0, 
+	93, 0, 94, 0, 74, 0, 95, 95, 
+	95, 0, 0, 0, 0, 0, 0, 0, 
+	
 }
 
 var _cte_trans_actions []byte = []byte{
-	0, 0, 13, 9, 0, 0, 0, 11, 
-	0, 0, 0, 7, 0, 3, 0, 0, 
-	5, 1, 0, 13, 9, 15, 0, 0, 
-	0, 11, 0, 0, 0, 7, 0, 3, 
-	0, 0, 5, 0, 0, 0, 17, 0, 
-	0, 0, 7, 0, 0, 13, 9, 0, 
-	0, 0, 11, 0, 0, 0, 7, 0, 
-	3, 0, 0, 5, 0, 0, 5, 0, 
-	19, 0, 0, 0, 0, 0, 7, 0, 
-	0, 13, 9, 0, 0, 0, 11, 0, 
-	0, 0, 7, 0, 3, 0, 0, 5, 
-	0, 0, 5, 0, 21, 0, 0, 0, 
-	0, 0, 7, 0, 0, 13, 9, 0, 
-	0, 0, 11, 0, 0, 0, 7, 0, 
-	3, 0, 0, 5, 0, 0, 5, 0, 
+	0, 0, 17, 0, 13, 9, 0, 0, 
+	0, 11, 0, 0, 0, 0, 15, 0, 
+	0, 0, 0, 0, 0, 7, 0, 0, 
+	0, 3, 0, 0, 0, 0, 0, 5, 
+	0, 19, 0, 33, 0, 0, 29, 21, 
+	23, 25, 27, 31, 0, 0, 17, 0, 
+	13, 9, 35, 0, 0, 0, 11, 0, 
+	1, 0, 0, 35, 0, 1, 0, 0, 
+	15, 0, 0, 0, 0, 0, 0, 7, 
+	0, 0, 0, 3, 0, 0, 0, 0, 
+	0, 5, 0, 0, 0, 17, 0, 0, 
+	37, 0, 1, 0, 0, 0, 0, 0, 
+	0, 0, 17, 0, 13, 9, 0, 0, 
+	0, 11, 0, 0, 0, 0, 37, 0, 
+	1, 0, 0, 15, 0, 0, 0, 0, 
+	0, 0, 7, 0, 0, 0, 3, 0, 
+	0, 0, 0, 0, 5, 0, 0, 0, 
+	0, 0, 0, 0, 7, 0, 0, 0, 
+	0, 0, 5, 0, 0, 0, 17, 39, 
+	0, 0, 0, 1, 0, 0, 0, 0, 
+	0, 0, 0, 17, 0, 13, 9, 0, 
+	0, 0, 11, 0, 0, 0, 0, 39, 
+	0, 1, 0, 0, 15, 0, 0, 0, 
+	0, 0, 0, 7, 0, 0, 0, 3, 
+	0, 0, 0, 0, 0, 5, 0, 0, 
+	0, 0, 0, 0, 0, 7, 0, 0, 
+	0, 0, 0, 5, 0, 0, 0, 17, 
+	41, 0, 0, 0, 1, 0, 0, 0, 
+	0, 0, 0, 0, 17, 0, 13, 9, 
+	0, 0, 0, 11, 0, 0, 0, 0, 
+	41, 0, 1, 0, 0, 15, 0, 0, 
+	0, 0, 0, 0, 7, 0, 0, 0, 
+	3, 0, 0, 0, 0, 0, 5, 0, 
+	0, 0, 0, 0, 0, 0, 7, 0, 
+	0, 0, 0, 0, 5, 0, 0, 0, 
+	0, 1, 1, 1, 1, 1, 1, 1, 
+	
 }
 
 var _cte_eof_actions []byte = []byte{
 	0, 0, 0, 0, 0, 0, 0, 0, 
-	0, 0, 0, 1, 1, 0, 0, 0, 
-	0, 0, 0, 0, 0, 0, 1, 0, 
+	0, 0, 0, 0, 0, 1, 1, 0, 
+	1, 1, 0, 0, 0, 0, 0, 0, 
 	0, 0, 0, 0, 0, 1, 0, 0, 
+	1, 0, 0, 0, 0, 0, 0, 0, 
 	0, 0, 0, 0, 0, 0, 0, 0, 
-	0, 0, 1, 0, 0, 0, 0, 0, 
-	0, 1, 0, 0, 0, 0, 0, 0, 
-	0, 0, 0, 0, 0, 0, 1, 0, 
-	0, 0, 0, 0, 0, 1, 0, 0, 
+	0, 0, 0, 1, 0, 0, 1, 0, 
 	0, 0, 0, 0, 0, 0, 0, 0, 
-	0, 0, 0, 1, 1, 1, 1, 
+	0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 1, 0, 0, 1, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 0, 
+	1, 1, 1, 1, 1, 1, 
 }
 
 const cte_start int = 1
 const cte_error int = 0
 
-const cte_en_list_iterate int = 11
-const cte_en_unordered_map_iterate int = 22
-const cte_en_ordered_map_iterate int = 42
-const cte_en_metadata_map_iterate int = 62
+const cte_en_comment_iterate int = 13
+const cte_en_string_iterate int = 14
+const cte_en_list_iterate int = 16
+const cte_en_unordered_map_iterate int = 29
+const cte_en_ordered_map_iterate int = 51
+const cte_en_metadata_map_iterate int = 73
 const cte_en_main int = 1
 
 
-//line cte.rl:149
+//line cte.rl:216
 
 type Parser struct {
     cs int // Current Ragel state
@@ -229,6 +258,7 @@ type Parser struct {
     top int // Index of top of stack
     stack []int
     data []byte
+    arrayStart int // Start of the current item of interest
 }
 
 func (this *Parser) Init(maxDepth int) {
@@ -240,6 +270,25 @@ func NewParser(maxDepth int) *Parser {
 	this := new(Parser)
 	this.Init(maxDepth)
 	return this
+}
+
+func (this *Parser) flushByteArray(index int, callbacks CteDecoderCallbacks) error {
+    err := callbacks.OnArrayData(this.data[this.arrayStart:index])
+    if err != nil {
+    		return err
+    }
+    this.arrayStart = index
+    return nil
+}
+
+func (this *Parser) flushAndAddEscapedCharacter(index int, escapedCharacter byte, callbacks CteDecoderCallbacks) error {
+	this.data[index] = escapedCharacter
+	if err := this.flushByteArray(index+1, callbacks); err != nil {
+		return err
+	}
+	// Get past escape initiator and escape char
+	this.arrayStart = index + 2
+	return nil
 }
 
 func (this *Parser) Parse(src []byte, callbacks CteDecoderCallbacks) (isComplete bool, err error) {
@@ -257,13 +306,13 @@ func (this *Parser) Parse(src []byte, callbacks CteDecoderCallbacks) (isComplete
 	_ = te
 	
     
-//line cte.go:261
+//line cte.go:310
 	{
 	 this.cs = cte_start
 	 this.top = 0
 	}
 
-//line cte.go:267
+//line cte.go:316
 	{
 	var _klen int
 	var _trans int
@@ -330,7 +379,6 @@ _resume:
 	}
 
 _match:
-	_trans = int(_cte_indicies[_trans])
 	 this.cs = int(_cte_trans_targs[_trans])
 
 	if _cte_trans_actions[_trans] == 0 {
@@ -343,14 +391,14 @@ _match:
 		_acts++
 		switch _cte_actions[_acts-1] {
 		case 0:
-//line cte.rl:34
+//line cte.rl:35
 
-    		err = fmt.Errorf("Parse Error")
+    		err = fmt.Errorf("Parse error pos %v of [%v] (%c)", p, string(this.data),  this.data[p])
         p++; goto _out
 
     
 		case 1:
-//line cte.rl:41
+//line cte.rl:51
 
         err = callbacks.OnNil()
         if err != nil {
@@ -359,7 +407,7 @@ _match:
         }
     
 		case 2:
-//line cte.rl:48
+//line cte.rl:58
 
         err = callbacks.OnBool(true)
         if err != nil {
@@ -368,7 +416,7 @@ _match:
         }
     
 		case 3:
-//line cte.rl:55
+//line cte.rl:65
 
         err = callbacks.OnBool(false)
         if err != nil {
@@ -377,76 +425,119 @@ _match:
         }
     
 		case 4:
-//line cte.rl:62
+//line cte.rl:72
 
         err = callbacks.OnListBegin()
         if err != nil {
         		p++; goto _out
 
         }
-         this.stack[ this.top] =  this.cs;  this.top++;  this.cs = 11; goto _again
+         this.stack[ this.top] =  this.cs;  this.top++;  this.cs = 16; goto _again
 
     
 		case 5:
-//line cte.rl:70
+//line cte.rl:80
 
         err = callbacks.OnUnorderedMapBegin()
         if err != nil {
         		p++; goto _out
 
         }
-         this.stack[ this.top] =  this.cs;  this.top++;  this.cs = 22; goto _again
+         this.stack[ this.top] =  this.cs;  this.top++;  this.cs = 29; goto _again
 
     
 		case 6:
-//line cte.rl:78
+//line cte.rl:88
 
         err = callbacks.OnOrderedMapBegin()
         if err != nil {
         		p++; goto _out
 
         }
-         this.stack[ this.top] =  this.cs;  this.top++;  this.cs = 42; goto _again
+         this.stack[ this.top] =  this.cs;  this.top++;  this.cs = 51; goto _again
 
     
 		case 7:
-//line cte.rl:106
+//line cte.rl:104
 
-            err = callbacks.OnContainerEnd()
-            if err != nil {
-	        		p++; goto _out
+		this.arrayStart = p
+    		if  this.data[p] == ' ' {
+				this.arrayStart+=4
+		}
+        err = callbacks.OnCommentBegin()
+        if err != nil {
+        		p++; goto _out
 
-            }
-             this.top--;  this.cs =  this.stack[ this.top]
-goto _again
+        }
+         this.stack[ this.top] =  this.cs;  this.top++;  this.cs = 13; goto _again
 
-        
+    
 		case 8:
 //line cte.rl:116
 
-            err = callbacks.OnContainerEnd()
-            if err != nil {
-	        		p++; goto _out
+		this.arrayStart = p + 1
+        err = callbacks.OnStringBegin()
+        if err != nil {
+        		p++; goto _out
 
-            }
-             this.top--;  this.cs =  this.stack[ this.top]
-goto _again
+        }
+         this.stack[ this.top] =  this.cs;  this.top++;  this.cs = 14; goto _again
 
-        
+    
 		case 9:
-//line cte.rl:126
+//line cte.rl:134
 
-            err = callbacks.OnContainerEnd()
+            err = callbacks.OnArrayData(this.data[this.arrayStart:p])
             if err != nil {
-	        		p++; goto _out
+                    p++; goto _out
+
+            }
+            err = callbacks.OnArrayEnd()
+            if err != nil {
+                    p++; goto _out
 
             }
              this.top--;  this.cs =  this.stack[ this.top]
 goto _again
 
-        
+		
 		case 10:
-//line cte.rl:136
+//line cte.rl:150
+this.flushAndAddEscapedCharacter(p-1, '\\', callbacks)
+		case 11:
+//line cte.rl:151
+this.flushAndAddEscapedCharacter(p-1, '\n', callbacks)
+		case 12:
+//line cte.rl:152
+this.flushAndAddEscapedCharacter(p-1, '\r', callbacks)
+		case 13:
+//line cte.rl:153
+this.flushAndAddEscapedCharacter(p-1, '\t', callbacks)
+		case 14:
+//line cte.rl:154
+this.flushAndAddEscapedCharacter(p-1, '"', callbacks)
+		case 15:
+//line cte.rl:155
+return false, fmt.Errorf("\\%c: Illegal escape encoding", this.data[p])
+		case 16:
+//line cte.rl:159
+
+            err = callbacks.OnArrayData(this.data[this.arrayStart:p])
+            if err != nil {
+                    p++; goto _out
+
+            }
+            err = callbacks.OnArrayEnd()
+            if err != nil {
+                    p++; goto _out
+
+            }
+             this.top--;  this.cs =  this.stack[ this.top]
+goto _again
+
+		
+		case 17:
+//line cte.rl:173
 
             err = callbacks.OnContainerEnd()
             if err != nil {
@@ -457,7 +548,43 @@ goto _again
 goto _again
 
         
-//line cte.go:461
+		case 18:
+//line cte.rl:183
+
+            err = callbacks.OnContainerEnd()
+            if err != nil {
+	        		p++; goto _out
+
+            }
+             this.top--;  this.cs =  this.stack[ this.top]
+goto _again
+
+        
+		case 19:
+//line cte.rl:193
+
+            err = callbacks.OnContainerEnd()
+            if err != nil {
+	        		p++; goto _out
+
+            }
+             this.top--;  this.cs =  this.stack[ this.top]
+goto _again
+
+        
+		case 20:
+//line cte.rl:203
+
+            err = callbacks.OnContainerEnd()
+            if err != nil {
+	        		p++; goto _out
+
+            }
+             this.top--;  this.cs =  this.stack[ this.top]
+goto _again
+
+        
+//line cte.go:588
 		}
 	}
 
@@ -477,13 +604,13 @@ _again:
 			__acts++
 			switch _cte_actions[__acts-1] {
 			case 0:
-//line cte.rl:34
+//line cte.rl:35
 
-    		err = fmt.Errorf("Parse Error")
+    		err = fmt.Errorf("Parse error pos %v of [%v] (%c)", p, string(this.data),  this.data[p])
         p++; goto _out
 
     
-//line cte.go:487
+//line cte.go:614
 			}
 		}
 	}
@@ -491,11 +618,13 @@ _again:
 	_out: {}
 	}
 
-//line cte.rl:190
+//line cte.rl:277
 
 
 	if ts > 0 {
 		// TODO: Copy to underflow buffer
+		// arrayStart
+		// ts doesn't seem to get used?
         // copy(this.underflow, data[ts:pe])
         // p = 0
         // pe = pe - ts

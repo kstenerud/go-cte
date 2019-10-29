@@ -19,11 +19,12 @@ type CteDecoderCallbacks interface {
   OnUnorderedMapBegin() error
   OnMetadataMapBegin() error
   OnContainerEnd() error
-//  OnBytesBegin(byteCount uint64) error
-//  OnStringBegin(byteCount uint64) error
-//  OnURIBegin(byteCount uint64) error
-//  OnCommentBegin(byteCount uint64) error
-//  OnArrayData(bytes []byte) error
+//  OnBytesBegin() error
+  OnStringBegin() error
+//  OnURIBegin() error
+  OnCommentBegin() error
+  OnArrayData(bytes []byte) error
+  OnArrayEnd() error
 }
 
 %%{
@@ -32,11 +33,20 @@ type CteDecoderCallbacks interface {
 
     action on_error
     {
-    		err = fmt.Errorf("Parse Error")
+    		err = fmt.Errorf("Parse error pos %v of [%v] (%c)", fpc, string(this.data), fc)
         fbreak;
     }
 
 	ws = [\r\n\t ];
+	eol = [\r\n];
+
+	utf8 = (0xc2..0xdf 0x80..0xbf) |
+	       (0xe0..0xef 0x80..0xbf 0x80..0xbf) |
+		   (0xf0..0xf4 0x80..0xbf 0x80..0xbf 0x80..0xbf);
+
+	unquoted_safe_first_char = [A-Za-z_] | utf8;
+	unquoted_safe = unquoted_safe_first_char | [0-9.] | '-';
+	unquoted_string = unquoted_safe_first_char unquoted_safe*;
 
     nil = "nil" @{
         err = callbacks.OnNil()
@@ -91,15 +101,72 @@ type CteDecoderCallbacks interface {
         fcall metadata_map_iterate;
     };
 
-    comment = "//" [^\n]* '\n' @{
+    comment = "//" any @{
+		this.arrayStart = fpc
+    		if fc == ' ' {
+				this.arrayStart++
+		}
+        err = callbacks.OnCommentBegin()
+        if err != nil {
+        		fbreak;
+        }
+        fcall comment_iterate;
     };
 
+	string = '"' @{
+		this.arrayStart = fpc + 1
+        err = callbacks.OnStringBegin()
+        if err != nil {
+        		fbreak;
+        }
+        fcall string_iterate;
+    };
+
+
     metadata = metadata_map | comment;
-    keyable = true | false;
+    keyable = true | false | string;
     nonkeyable = nil | list | unordered_map | ordered_map;
     value = ws* (keyable | nonkeyable);
     kv_pair = ws* keyable ws* '=' value;
 
+	comment_iterate :=
+		[^\n]*
+		'\n' @{
+            err = callbacks.OnArrayData(this.data[this.arrayStart:fpc])
+            if err != nil {
+                    fbreak;
+            }
+            err = callbacks.OnArrayEnd()
+            if err != nil {
+                    fbreak;
+            }
+            fret;
+		} $!on_error $/on_error;
+
+	string_iterate :=
+		(
+			(any - ('"' | '\\') ) |
+			('\\' (
+				('\\' @{this.flushAndAddEscapedCharacter(fpc-1, '\\', callbacks)}) |
+				('n' @{this.flushAndAddEscapedCharacter(fpc-1, '\n', callbacks)}) |
+				('r' @{this.flushAndAddEscapedCharacter(fpc-1, '\r', callbacks)}) |
+				('t' @{this.flushAndAddEscapedCharacter(fpc-1, '\t', callbacks)}) |
+				('"' @{this.flushAndAddEscapedCharacter(fpc-1, '"', callbacks)}) |
+				([^"nrt\\] @{return false, fmt.Errorf("\\%c: Illegal escape encoding", this.data[fpc])})
+				# TODO: hex and unicode
+			))
+		)*
+		'"' @{
+            err = callbacks.OnArrayData(this.data[this.arrayStart:fpc])
+            if err != nil {
+                    fbreak;
+            }
+            err = callbacks.OnArrayEnd()
+            if err != nil {
+                    fbreak;
+            }
+            fret;
+		} $!on_error $/on_error;
 
     list_iterate :=
         ( value (ws value)* )?
@@ -157,6 +224,7 @@ type Parser struct {
     top int // Index of top of stack
     stack []int
     data []byte
+    arrayStart int // Start of the current item of interest
 }
 
 func (this *Parser) Init(maxDepth int) {
@@ -168,6 +236,25 @@ func NewParser(maxDepth int) *Parser {
 	this := new(Parser)
 	this.Init(maxDepth)
 	return this
+}
+
+func (this *Parser) flushByteArray(index int, callbacks CteDecoderCallbacks) error {
+    err := callbacks.OnArrayData(this.data[this.arrayStart:index])
+    if err != nil {
+    		return err
+    }
+    this.arrayStart = index
+    return nil
+}
+
+func (this *Parser) flushAndAddEscapedCharacter(index int, escapedCharacter byte, callbacks CteDecoderCallbacks) error {
+	this.data[index] = escapedCharacter
+	if err := this.flushByteArray(index+1, callbacks); err != nil {
+		return err
+	}
+	// Get past escape initiator and escape char
+	this.arrayStart = index + 2
+	return nil
 }
 
 func (this *Parser) Parse(src []byte, callbacks CteDecoderCallbacks) (isComplete bool, err error) {
@@ -191,6 +278,8 @@ func (this *Parser) Parse(src []byte, callbacks CteDecoderCallbacks) (isComplete
 
 	if ts > 0 {
 		// TODO: Copy to underflow buffer
+		// arrayStart
+		// ts doesn't seem to get used?
         // copy(this.underflow, data[ts:pe])
         // p = 0
         // pe = pe - ts

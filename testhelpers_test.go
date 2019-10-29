@@ -154,19 +154,13 @@ func (this *testCallbacks) containerEnd() {
 	this.storeValue(item)
 }
 
-func (this *testCallbacks) arrayBegin(newArrayType arrayType, length int) {
-	this.currentArray = make([]byte, 0, length)
+func (this *testCallbacks) arrayBegin(newArrayType arrayType) {
+	this.currentArray = make([]byte, 0, 10)
 	this.currentArrayType = newArrayType
-	if length == 0 {
-		this.arrayEnd()
-	}
 }
 
 func (this *testCallbacks) arrayData(data []byte) {
 	this.currentArray = append(this.currentArray, data...)
-	if len(this.currentArray) == cap(this.currentArray) {
-		this.arrayEnd()
-	}
 }
 
 func (this *testCallbacks) arrayEnd() {
@@ -273,28 +267,33 @@ func (this *testCallbacks) OnContainerEnd() error {
 	return nil
 }
 
-func (this *testCallbacks) OnStringBegin(byteCount uint64) error {
-	this.arrayBegin(arrayTypeString, int(byteCount))
+func (this *testCallbacks) OnStringBegin() error {
+	this.arrayBegin(arrayTypeString)
 	return nil
 }
 
-func (this *testCallbacks) OnCommentBegin(byteCount uint64) error {
-	this.arrayBegin(arrayTypeComment, int(byteCount))
+func (this *testCallbacks) OnCommentBegin() error {
+	this.arrayBegin(arrayTypeComment)
 	return nil
 }
 
-func (this *testCallbacks) OnURIBegin(byteCount uint64) error {
-	this.arrayBegin(arrayTypeURI, int(byteCount))
+func (this *testCallbacks) OnURIBegin() error {
+	this.arrayBegin(arrayTypeURI)
 	return nil
 }
 
-func (this *testCallbacks) OnBytesBegin(byteCount uint64) error {
-	this.arrayBegin(arrayTypeBytes, int(byteCount))
+func (this *testCallbacks) OnBytesBegin() error {
+	this.arrayBegin(arrayTypeBytes)
 	return nil
 }
 
 func (this *testCallbacks) OnArrayData(bytes []byte) error {
 	this.arrayData(bytes)
+	return nil
+}
+
+func (this *testCallbacks) OnArrayEnd() error {
+	this.arrayEnd()
 	return nil
 }
 
