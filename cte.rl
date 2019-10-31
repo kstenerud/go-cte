@@ -101,16 +101,30 @@ type CteDecoderCallbacks interface {
         fcall metadata_map_iterate;
     };
 
-    comment = "//" any @{
-		this.arrayStart = fpc
-    		if fc == ' ' {
-				this.arrayStart++
-		}
+    comment = "//" @{
+		this.arrayStart = fpc + 1
         err = callbacks.OnCommentBegin()
         if err != nil {
         		fbreak;
         }
         fcall comment_iterate;
+    };
+
+    multiline_comment = "/*" @{
+		if this.commentDepth == 0 {
+            err = callbacks.OnCommentBegin()
+            if err != nil {
+        		    fbreak;
+			}
+        } else {
+            err = callbacks.OnArrayData(this.data[this.arrayStart:fpc+1])
+            if err != nil {
+                fbreak;
+            }
+        }
+		this.arrayStart = fpc + 1
+        this.commentDepth++
+        fcall multiline_comment_iterate;
     };
 
 	string = '"' @{
@@ -123,11 +137,12 @@ type CteDecoderCallbacks interface {
     };
 
 
-    metadata = metadata_map | comment;
     keyable = true | false | string;
     nonkeyable = nil | list | unordered_map | ordered_map;
-    value = ws* (keyable | nonkeyable);
-    kv_pair = ws* keyable ws* '=' value;
+    object_pre = (ws | metadata_map | comment | multiline_comment)*;
+    object_post = (ws | comment | multiline_comment)*;
+    value = object_pre (keyable | nonkeyable);
+    kv_pair = object_pre keyable object_post '=' value;
 
 	comment_iterate :=
 		[^\n]*
@@ -139,6 +154,23 @@ type CteDecoderCallbacks interface {
             err = callbacks.OnArrayEnd()
             if err != nil {
                     fbreak;
+            }
+            fret;
+		} $!on_error $/on_error;
+
+	multiline_comment_iterate :=
+		any* multiline_comment? "*/" @{
+            err = callbacks.OnArrayData(this.data[this.arrayStart:fpc-1])
+            if err != nil {
+                    fbreak;
+            }
+            this.arrayStart = fpc-1
+            this.commentDepth--
+            if this.commentDepth == 0 {
+	            err = callbacks.OnArrayEnd()
+	            if err != nil {
+	                    fbreak;
+				}
             }
             fret;
 		} $!on_error $/on_error;
@@ -225,6 +257,7 @@ type Parser struct {
     stack []int
     data []byte
     arrayStart int // Start of the current item of interest
+    commentDepth int
 }
 
 func (this *Parser) Init(maxDepth int) {
