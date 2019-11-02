@@ -5,6 +5,10 @@ import (
 	// "time"
 )
 
+func TestBroken(t *testing.T) {
+	assertDecodeFails(t, "$")
+}
+
 func TestWhitespace(t *testing.T) {
 	assertDecoded(t, " nil", NilValue)
 	assertDecoded(t, "nil ", NilValue)

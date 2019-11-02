@@ -347,6 +347,13 @@ func assertDecoded(t *testing.T, encoded string, expected interface{}) {
 	}
 }
 
+func assertDecodeFails(t *testing.T, encoded string) {
+	_, err := decodeDocument(100, []byte(encoded))
+	if err == nil {
+		t.Errorf("Error: Expected error")
+	}
+}
+
 // func assertDecodedPiecemeal(t *testing.T, encoded []byte, minBufferSize int, maxBufferSize int, expected interface{}) {
 // 	for i := minBufferSize; i < maxBufferSize; i++ {
 // 		actual, err := decodeWithBufferSize(100, encoded, i)

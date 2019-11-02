@@ -4,29 +4,29 @@ package cte
 
 import (
     "fmt"
-//  "time"
+//    "time"
 )
 
 type CteDecoderCallbacks interface {
     OnNil() error
-  OnBool(value bool) error
-//  OnPositiveInt(value uint64) error
-//  OnNegativeInt(value uint64) error
-//  OnFloat(value float64) error
-//  OnDate(value time.Time) error
-//  OnTime(value time.Time) error
-//  OnTimestamp(value time.Time) error
-    OnListBegin() error
-  OnOrderedMapBegin() error
-  OnUnorderedMapBegin() error
-  OnMetadataMapBegin() error
-  OnContainerEnd() error
-//  OnBytesBegin() error
-  OnStringBegin() error
-//  OnURIBegin() error
-  OnCommentBegin() error
-  OnArrayData(bytes []byte) error
-  OnArrayEnd() error
+    OnBool(value bool) error
+//    OnPositiveInt(value uint64) error
+//    OnNegativeInt(value uint64) error
+//    OnFloat(value float64) error
+//    OnDate(value time.Time) error
+//    OnTime(value time.Time) error
+//    OnTimestamp(value time.Time) error
+      OnListBegin() error
+    OnOrderedMapBegin() error
+    OnUnorderedMapBegin() error
+    OnMetadataMapBegin() error
+    OnContainerEnd() error
+//    OnBytesBegin() error
+    OnStringBegin() error
+//    OnURIBegin() error
+    OnCommentBegin() error
+    OnArrayData(bytes []byte) error
+    OnArrayEnd() error
 }
 
 
@@ -42,7 +42,7 @@ var _cte_actions []byte = []byte{
 	1, 8, 1, 9, 1, 10, 1, 11, 
 	1, 12, 1, 13, 1, 14, 1, 15, 
 	1, 16, 1, 17, 1, 18, 1, 19, 
-	1, 20, 1, 21, 1, 22, 1, 23, 
+	1, 20, 1, 21, 1, 22, 
 }
 
 var _cte_key_offsets []int16 = []int16{
@@ -203,70 +203,53 @@ var _cte_trans_targs []byte = []byte{
 }
 
 var _cte_trans_actions []byte = []byte{
-	0, 0, 21, 15, 0, 13, 9, 0, 
-	0, 0, 11, 0, 0, 19, 17, 0, 
-	0, 0, 0, 0, 0, 0, 7, 0, 
-	0, 0, 3, 0, 0, 0, 0, 0, 
-	5, 0, 23, 0, 0, 0, 0, 0, 
-	25, 0, 19, 0, 0, 39, 0, 0, 
-	35, 27, 29, 31, 33, 37, 0, 0, 
-	21, 15, 0, 13, 9, 41, 0, 0, 
-	0, 11, 0, 1, 0, 0, 41, 0, 
-	1, 0, 0, 21, 15, 0, 13, 9, 
-	0, 0, 0, 11, 0, 0, 19, 17, 
-	0, 0, 0, 0, 0, 0, 0, 7, 
-	0, 0, 0, 3, 0, 0, 0, 0, 
-	0, 5, 0, 0, 0, 21, 15, 0, 
-	0, 0, 43, 0, 1, 0, 0, 0, 
-	0, 0, 0, 19, 17, 0, 0, 0, 
-	21, 15, 0, 13, 9, 0, 0, 0, 
-	11, 0, 0, 0, 0, 43, 0, 1, 
-	19, 17, 0, 0, 0, 0, 0, 0, 
-	0, 7, 0, 0, 0, 3, 0, 0, 
-	0, 0, 0, 5, 0, 0, 0, 21, 
-	15, 0, 0, 0, 0, 0, 19, 17, 
-	0, 0, 0, 0, 0, 0, 0, 7, 
+	0, 0, 19, 13, 0, 11, 7, 0, 
+	0, 0, 9, 0, 0, 17, 15, 0, 
+	0, 0, 0, 0, 0, 0, 5, 0, 
+	0, 0, 1, 0, 0, 0, 0, 0, 
+	3, 0, 21, 0, 0, 0, 0, 0, 
+	23, 0, 17, 0, 0, 37, 0, 0, 
+	33, 25, 27, 29, 31, 35, 0, 0, 
+	19, 13, 0, 11, 7, 39, 0, 0, 
+	0, 9, 0, 0, 0, 0, 39, 0, 
+	0, 0, 0, 19, 13, 0, 11, 7, 
+	0, 0, 0, 9, 0, 0, 17, 15, 
+	0, 0, 0, 0, 0, 0, 0, 5, 
+	0, 0, 0, 1, 0, 0, 0, 0, 
+	0, 3, 0, 0, 0, 19, 13, 0, 
+	0, 0, 41, 0, 0, 0, 0, 0, 
+	0, 0, 0, 17, 15, 0, 0, 0, 
+	19, 13, 0, 11, 7, 0, 0, 0, 
+	9, 0, 0, 0, 0, 41, 0, 0, 
+	17, 15, 0, 0, 0, 0, 0, 0, 
+	0, 5, 0, 0, 0, 1, 0, 0, 
+	0, 0, 0, 3, 0, 0, 0, 19, 
+	13, 0, 0, 0, 0, 0, 17, 15, 
+	0, 0, 0, 0, 0, 0, 0, 5, 
+	0, 0, 0, 0, 0, 3, 0, 0, 
+	0, 19, 13, 0, 43, 0, 0, 0, 
+	0, 0, 0, 0, 0, 0, 0, 17, 
+	15, 0, 0, 0, 19, 13, 0, 11, 
+	7, 0, 0, 0, 9, 0, 0, 0, 
+	0, 43, 0, 0, 17, 15, 0, 0, 
 	0, 0, 0, 0, 0, 5, 0, 0, 
-	0, 21, 15, 0, 45, 0, 0, 0, 
-	1, 0, 0, 0, 0, 0, 0, 19, 
-	17, 0, 0, 0, 21, 15, 0, 13, 
-	9, 0, 0, 0, 11, 0, 0, 0, 
-	0, 45, 0, 1, 19, 17, 0, 0, 
-	0, 0, 0, 0, 0, 7, 0, 0, 
-	0, 3, 0, 0, 0, 0, 0, 5, 
-	0, 0, 0, 21, 15, 0, 0, 0, 
-	0, 0, 19, 17, 0, 0, 0, 0, 
-	0, 0, 0, 7, 0, 0, 0, 0, 
-	0, 5, 0, 0, 0, 21, 15, 47, 
-	0, 0, 0, 0, 1, 0, 0, 0, 
-	0, 0, 0, 19, 17, 0, 0, 0, 
-	21, 15, 0, 13, 9, 0, 0, 0, 
-	11, 0, 0, 0, 0, 47, 0, 1, 
-	19, 17, 0, 0, 0, 0, 0, 0, 
-	0, 7, 0, 0, 0, 3, 0, 0, 
-	0, 0, 0, 5, 0, 0, 0, 21, 
-	15, 0, 0, 0, 0, 0, 19, 17, 
-	0, 0, 0, 0, 0, 0, 0, 7, 
-	0, 0, 0, 0, 0, 5, 0, 0, 
-	0, 0, 1, 1, 19, 0, 0, 1, 
-	1, 1, 1, 1, 
-}
-
-var _cte_eof_actions []byte = []byte{
+	0, 1, 0, 0, 0, 0, 0, 3, 
+	0, 0, 0, 19, 13, 0, 0, 0, 
+	0, 0, 17, 15, 0, 0, 0, 0, 
+	0, 0, 0, 5, 0, 0, 0, 0, 
+	0, 3, 0, 0, 0, 19, 13, 45, 
 	0, 0, 0, 0, 0, 0, 0, 0, 
-	0, 0, 0, 0, 1, 1, 1, 1, 
-	1, 0, 1, 1, 0, 0, 0, 0, 
-	0, 0, 0, 0, 0, 0, 0, 1, 
-	0, 0, 0, 1, 0, 0, 0, 0, 
-	0, 0, 0, 0, 0, 0, 0, 0, 
-	0, 0, 0, 0, 0, 0, 0, 1, 
-	0, 0, 0, 1, 0, 0, 0, 0, 
-	0, 0, 0, 0, 0, 0, 0, 0, 
-	0, 0, 0, 0, 0, 0, 0, 1, 
-	0, 0, 0, 1, 0, 0, 0, 0, 
-	0, 0, 0, 0, 0, 0, 0, 0, 
-	0, 0, 0, 0, 0, 0, 0, 0, 
-	1, 1, 1, 1, 1, 1, 1, 
+	0, 0, 0, 17, 15, 0, 0, 0, 
+	19, 13, 0, 11, 7, 0, 0, 0, 
+	9, 0, 0, 0, 0, 45, 0, 0, 
+	17, 15, 0, 0, 0, 0, 0, 0, 
+	0, 5, 0, 0, 0, 1, 0, 0, 
+	0, 0, 0, 3, 0, 0, 0, 19, 
+	13, 0, 0, 0, 0, 0, 17, 15, 
+	0, 0, 0, 0, 0, 0, 0, 5, 
+	0, 0, 0, 0, 0, 3, 0, 0, 
+	0, 0, 0, 0, 17, 0, 0, 0, 
+	0, 0, 0, 0, 
 }
 
 const cte_start int = 1
@@ -286,9 +269,6 @@ const cte_en_main int = 1
 
 type Parser struct {
     cs int // Current Ragel state
-    p int // Position: current
-    pe int // Position: end of buffer
-    eof int // Position: end of file
     ts int // Position: start of token
     te int // Position: end of token
     top int // Index of top of stack
@@ -296,60 +276,61 @@ type Parser struct {
     data []byte
     arrayStart int // Start of the current item of interest
     commentDepth int
+    exponent uint64
+    exponentSign int
+    significand uint64
+    significandSign int
 }
 
 func (this *Parser) Init(maxDepth int) {
-	this.eof = -1
-	this.stack = make([]int, maxDepth)
+    this.stack = make([]int, maxDepth)
 }
 
 func NewParser(maxDepth int) *Parser {
-	this := new(Parser)
-	this.Init(maxDepth)
-	return this
+    this := new(Parser)
+    this.Init(maxDepth)
+    return this
 }
 
 func (this *Parser) flushByteArray(index int, callbacks CteDecoderCallbacks) error {
     err := callbacks.OnArrayData(this.data[this.arrayStart:index])
     if err != nil {
-    		return err
+        return err
     }
     this.arrayStart = index
     return nil
 }
 
 func (this *Parser) flushAndAddEscapedCharacter(index int, escapedCharacter byte, callbacks CteDecoderCallbacks) error {
-	this.data[index] = escapedCharacter
-	if err := this.flushByteArray(index+1, callbacks); err != nil {
-		return err
-	}
-	// Get past escape initiator and escape char
-	this.arrayStart = index + 2
-	return nil
+    this.data[index] = escapedCharacter
+    if err := this.flushByteArray(index+1, callbacks); err != nil {
+        return err
+    }
+    // Get past escape initiator and escape char
+    this.arrayStart = index + 2
+    return nil
 }
 
 func (this *Parser) Parse(src []byte, callbacks CteDecoderCallbacks) (isComplete bool, err error) {
-//	if this.ts > 0 {
-		// TODO: Read from undeflow buffer
-//	}
-	this.data = src
+//  if this.ts > 0 {
+        // TODO: Read from undeflow buffer
+//  }
+    this.data = src
     p := 0 // Position: current
     pe := len(this.data) // Position: end of buffer
+    // TODO: Change to -1 and check for end of file
     eof := pe // Position: end of file
-    ts := 0 // Position: start of token
-    te := 0 // Position: end of token
 
-	_ = eof
-	_ = te
-	
+    _ = eof
     
-//line cte.go:347
+    
+//line cte.go:328
 	{
 	 this.cs = cte_start
 	 this.top = 0
 	}
 
-//line cte.go:353
+//line cte.go:334
 	{
 	var _klen int
 	var _trans int
@@ -428,104 +409,97 @@ _match:
 		_acts++
 		switch _cte_actions[_acts-1] {
 		case 0:
-//line cte.rl:35
-
-    		err = fmt.Errorf("Parse error pos %v of [%v] (%c)", p, string(this.data),  this.data[p])
-        p++; goto _out
-
-    
-		case 1:
-//line cte.rl:51
+//line cte.rl:45
 
         err = callbacks.OnNil()
         if err != nil {
-        		p++; goto _out
+            p++; goto _out
+
+        }
+    
+		case 1:
+//line cte.rl:52
+
+        err = callbacks.OnBool(true)
+        if err != nil {
+            p++; goto _out
 
         }
     
 		case 2:
-//line cte.rl:58
+//line cte.rl:59
 
-        err = callbacks.OnBool(true)
+        err = callbacks.OnBool(false)
         if err != nil {
-        		p++; goto _out
+            p++; goto _out
 
         }
     
 		case 3:
-//line cte.rl:65
-
-        err = callbacks.OnBool(false)
-        if err != nil {
-        		p++; goto _out
-
-        }
-    
-		case 4:
 //line cte.rl:72
 
         err = callbacks.OnListBegin()
         if err != nil {
-        		p++; goto _out
+            p++; goto _out
 
         }
          this.stack[ this.top] =  this.cs;  this.top++;  this.cs = 18; goto _again
 
     
-		case 5:
+		case 4:
 //line cte.rl:80
 
         err = callbacks.OnUnorderedMapBegin()
         if err != nil {
-        		p++; goto _out
+            p++; goto _out
 
         }
          this.stack[ this.top] =  this.cs;  this.top++;  this.cs = 31; goto _again
 
     
-		case 6:
+		case 5:
 //line cte.rl:88
 
         err = callbacks.OnOrderedMapBegin()
         if err != nil {
-        		p++; goto _out
+            p++; goto _out
 
         }
          this.stack[ this.top] =  this.cs;  this.top++;  this.cs = 55; goto _again
 
     
-		case 7:
+		case 6:
 //line cte.rl:96
 
         err = callbacks.OnMetadataMapBegin()
         if err != nil {
-        		p++; goto _out
+            p++; goto _out
 
         }
          this.stack[ this.top] =  this.cs;  this.top++;  this.cs = 79; goto _again
 
     
-		case 8:
+		case 7:
 //line cte.rl:104
 
-		this.arrayStart = p + 1
+        this.arrayStart = p + 1
         err = callbacks.OnCommentBegin()
         if err != nil {
-        		p++; goto _out
+            p++; goto _out
 
         }
          this.stack[ this.top] =  this.cs;  this.top++;  this.cs = 12; goto _again
 
     
-		case 9:
+		case 8:
 //line cte.rl:113
 
-		if this.commentDepth == 0 {
+        if this.commentDepth == 0 {
             err = callbacks.OnCommentBegin()
             if err != nil {
-        		    p++; goto _out
+                p++; goto _out
 
-			}
+            }
         } else {
             err = callbacks.OnArrayData(this.data[this.arrayStart:p+1])
             if err != nil {
@@ -533,102 +507,114 @@ _match:
 
             }
         }
-		this.arrayStart = p + 1
+        this.arrayStart = p + 1
         this.commentDepth++
          this.stack[ this.top] =  this.cs;  this.top++;  this.cs = 13; goto _again
 
     
-		case 10:
+		case 9:
 //line cte.rl:130
 
-		this.arrayStart = p + 1
+        this.arrayStart = p + 1
         err = callbacks.OnStringBegin()
         if err != nil {
-        		p++; goto _out
+            p++; goto _out
 
         }
          this.stack[ this.top] =  this.cs;  this.top++;  this.cs = 16; goto _again
 
     
-		case 11:
+		case 10:
 //line cte.rl:149
 
             err = callbacks.OnArrayData(this.data[this.arrayStart:p])
             if err != nil {
-                    p++; goto _out
+                p++; goto _out
 
             }
             err = callbacks.OnArrayEnd()
             if err != nil {
-                    p++; goto _out
+                p++; goto _out
 
             }
              this.top--;  this.cs =  this.stack[ this.top]
 goto _again
 
-		
-		case 12:
+        
+		case 11:
 //line cte.rl:162
 
             err = callbacks.OnArrayData(this.data[this.arrayStart:p-1])
             if err != nil {
-                    p++; goto _out
+                p++; goto _out
 
             }
             this.arrayStart = p-1
             this.commentDepth--
             if this.commentDepth == 0 {
-	            err = callbacks.OnArrayEnd()
-	            if err != nil {
-	                    p++; goto _out
+                err = callbacks.OnArrayEnd()
+                if err != nil {
+                    p++; goto _out
 
-				}
+                }
             }
              this.top--;  this.cs =  this.stack[ this.top]
 goto _again
 
-		
-		case 13:
+        
+		case 12:
 //line cte.rl:182
 this.flushAndAddEscapedCharacter(p-1, '\\', callbacks)
-		case 14:
+		case 13:
 //line cte.rl:183
 this.flushAndAddEscapedCharacter(p-1, '\n', callbacks)
-		case 15:
+		case 14:
 //line cte.rl:184
 this.flushAndAddEscapedCharacter(p-1, '\r', callbacks)
-		case 16:
+		case 15:
 //line cte.rl:185
 this.flushAndAddEscapedCharacter(p-1, '\t', callbacks)
-		case 17:
+		case 16:
 //line cte.rl:186
 this.flushAndAddEscapedCharacter(p-1, '"', callbacks)
-		case 18:
+		case 17:
 //line cte.rl:187
 return false, fmt.Errorf("\\%c: Illegal escape encoding", this.data[p])
-		case 19:
+		case 18:
 //line cte.rl:191
 
             err = callbacks.OnArrayData(this.data[this.arrayStart:p])
             if err != nil {
-                    p++; goto _out
+                p++; goto _out
 
             }
             err = callbacks.OnArrayEnd()
             if err != nil {
-                    p++; goto _out
+                p++; goto _out
 
             }
              this.top--;  this.cs =  this.stack[ this.top]
 goto _again
 
-		
-		case 20:
+        
+		case 19:
 //line cte.rl:205
 
             err = callbacks.OnContainerEnd()
             if err != nil {
-	        		p++; goto _out
+                p++; goto _out
+
+            }
+             this.top--;  this.cs =  this.stack[ this.top]
+goto _again
+
+        
+		case 20:
+//line cte.rl:215
+
+            err = callbacks.OnContainerEnd()
+            if err != nil {
+                p++; goto _out
 
             }
              this.top--;  this.cs =  this.stack[ this.top]
@@ -636,11 +622,11 @@ goto _again
 
         
 		case 21:
-//line cte.rl:215
+//line cte.rl:225
 
             err = callbacks.OnContainerEnd()
             if err != nil {
-	        		p++; goto _out
+                p++; goto _out
 
             }
              this.top--;  this.cs =  this.stack[ this.top]
@@ -648,30 +634,18 @@ goto _again
 
         
 		case 22:
-//line cte.rl:225
-
-            err = callbacks.OnContainerEnd()
-            if err != nil {
-	        		p++; goto _out
-
-            }
-             this.top--;  this.cs =  this.stack[ this.top]
-goto _again
-
-        
-		case 23:
 //line cte.rl:235
 
             err = callbacks.OnContainerEnd()
             if err != nil {
-	        		p++; goto _out
+                p++; goto _out
 
             }
              this.top--;  this.cs =  this.stack[ this.top]
 goto _again
 
         
-//line cte.go:675
+//line cte.go:649
 		}
 	}
 
@@ -684,39 +658,26 @@ _again:
 		goto _resume
 	}
 	_test_eof: {}
-	if p == eof {
-		__acts := _cte_eof_actions[ this.cs]
-		__nacts := uint(_cte_actions[__acts]); __acts++
-		for ; __nacts > 0; __nacts-- {
-			__acts++
-			switch _cte_actions[__acts-1] {
-			case 0:
-//line cte.rl:35
-
-    		err = fmt.Errorf("Parse error pos %v of [%v] (%c)", p, string(this.data),  this.data[p])
-        p++; goto _out
-
-    
-//line cte.go:701
-			}
-		}
-	}
-
 	_out: {}
 	}
 
-//line cte.rl:310
+//line cte.rl:308
 
 
-	if ts > 0 {
-		// TODO: Copy to underflow buffer
-		// arrayStart
-		// ts doesn't seem to get used?
+    if this.ts > 0 {
+        // TODO: Copy to underflow buffer
+        // arrayStart
+        // ts doesn't seem to get used?
         // copy(this.underflow, data[ts:pe])
         // p = 0
         // pe = pe - ts
-	}
-	// TODO
-	isComplete = true
-	return
+    }
+    // TODO
+    if this.cs == cte_error {
+        err = fmt.Errorf("Parse error at %v", p)
+    }
+//    isComplete = this.cs == cte_parse_first;
+    // TODO: Maybe there's no way to detect completion?
+    isComplete = true
+    return
 }
