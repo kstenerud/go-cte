@@ -79,9 +79,9 @@ func assertFailure(t *testing.T, err error) {
 
 // Decoder
 
-type Nil int
+type Nil string
 
-var NilValue Nil = Nil(-1234)
+var NilValue Nil = Nil("*NIL*")
 
 type arrayType int
 

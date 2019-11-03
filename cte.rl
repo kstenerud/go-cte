@@ -8,8 +8,8 @@ import (
 type CteDecoderCallbacks interface {
     OnNil() error
     OnBool(value bool) error
-//    OnPositiveInt(value uint64) error
-//    OnNegativeInt(value uint64) error
+    OnPositiveInt(value uint64) error
+    OnNegativeInt(value uint64) error
 //    OnFloat(value float64) error
 //    OnDate(value time.Time) error
 //    OnTime(value time.Time) error
@@ -67,7 +67,24 @@ type CteDecoderCallbacks interface {
         this.significandSign = -1
     };
 
-    integer = negative? [1-9];
+    significand_digit = [0-9] @{
+        this.significand = this.significand * 10 + uint64(fc) - uint64('0')
+    };
+
+    integer = negative? significand_digit+ %{
+        value := this.significand
+        sign := this.significandSign
+        this.significand = 0
+        this.significandSign = 1
+        if sign < 0 {
+            err = callbacks.OnNegativeInt(value)
+        } else {
+            err = callbacks.OnPositiveInt(value)
+        }
+        if err != nil {
+            fbreak;
+        }
+    };
 
     list = '[' @{
         err = callbacks.OnListBegin()
@@ -137,7 +154,7 @@ type CteDecoderCallbacks interface {
     };
 
 
-    keyable = true | false | string;
+    keyable = true | false | integer | string;
     nonkeyable = nil | list | unordered_map | ordered_map;
     object_pre = (ws | metadata_map | comment | multiline_comment)*;
     object_post = (ws | comment | multiline_comment)*;
