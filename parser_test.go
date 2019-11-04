@@ -1,6 +1,7 @@
 package cte
 
 import (
+	"net/url"
 	"testing"
 	// "time"
 )
@@ -80,6 +81,20 @@ func TestFloatHex(t *testing.T) {
 func TestString(t *testing.T) {
 	assertDecoded(t, "\"This is a string\"", "This is a string", 0)
 	assertDecoded(t, "\"String\\twith\\nnewlines\\rcrs\\\" and \\\\ quotes\"", "String\twith\nnewlines\rcrs\" and \\ quotes", 0)
+}
+
+func makeURL(str string) *url.URL {
+	url, err := url.Parse(str)
+	if err != nil {
+		url, err = url.Parse("http://parse.error")
+	}
+	return url
+}
+
+func TestURI(t *testing.T) {
+	assertDecoded(t, "u\"http://example.com\"", makeURL("http://example.com"), 0)
+	assertDecoded(t, "u\"mailto:me@me.com\"", makeURL("mailto:me@me.com"), 0)
+	assertDecoded(t, "u\"urn:oasis:names:specification:docbook:dtd:xml:4.1.2\"", makeURL("urn:oasis:names:specification:docbook:dtd:xml:4.1.2"), 0)
 }
 
 func TestList(t *testing.T) {

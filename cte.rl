@@ -16,14 +16,14 @@ type CteDecoderCallbacks interface {
 //    OnDate(value time.Time) error
 //    OnTime(value time.Time) error
 //    OnTimestamp(value time.Time) error
-      OnListBegin() error
+    OnListBegin() error
     OnOrderedMapBegin() error
     OnUnorderedMapBegin() error
     OnMetadataMapBegin() error
     OnContainerEnd() error
 //    OnBytesBegin() error
     OnStringBegin() error
-//    OnURIBegin() error
+    OnURIBegin() error
     OnCommentBegin() error
     OnArrayData(bytes []byte) error
     OnArrayEnd() error
@@ -34,7 +34,6 @@ type CteDecoderCallbacks interface {
     access this.;
 
     ws = [\r\n\t ];
-    eol = [\r\n];
 
     utf8 = (0xc2..0xdf 0x80..0xbf) |
            (0xe0..0xef 0x80..0xbf 0x80..0xbf) |
@@ -215,8 +214,17 @@ type CteDecoderCallbacks interface {
         fcall string_iterate;
     };
 
+    uri = 'u' '"' @{
+        this.arrayStart = fpc + 1
+        err = callbacks.OnURIBegin()
+        if err != nil {
+            fbreak;
+        }
+        fcall uri_iterate;
+    };
 
-    keyable = true | false | integer | float | string;
+
+    keyable = true | false | integer | float | string | uri;
     nonkeyable = nil | list | unordered_map | ordered_map;
     object_pre = (ws | metadata_map | comment | multiline_comment)*;
     object_post = (ws | comment | multiline_comment)*;
@@ -268,6 +276,18 @@ type CteDecoderCallbacks interface {
             ))
         )*
         '"' @{
+            err = callbacks.OnArrayData(this.data[this.arrayStart:fpc])
+            if err != nil {
+                fbreak;
+            }
+            err = callbacks.OnArrayEnd()
+            if err != nil {
+                fbreak;
+            }
+            fret;
+        };
+
+    uri_iterate := [ !#-~]+ '"' @{
             err = callbacks.OnArrayData(this.data[this.arrayStart:fpc])
             if err != nil {
                 fbreak;

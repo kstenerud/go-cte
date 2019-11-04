@@ -2,6 +2,8 @@ package cte
 
 import (
 	"math"
+	"net/url"
+
 	// "bytes"
 	"fmt"
 	"strings"
@@ -168,14 +170,21 @@ func (this *testCallbacks) arrayData(data []byte) {
 	this.currentArray = append(this.currentArray, data...)
 }
 
-func (this *testCallbacks) arrayEnd() {
+func (this *testCallbacks) arrayEnd() error {
 	array := this.currentArray
 	this.currentArray = nil
 	if this.currentArrayType == arrayTypeBytes {
 		this.storeValue(array)
+	} else if this.currentArrayType == arrayTypeURI {
+		uri, err := url.Parse(string(array))
+		if err != nil {
+			return err
+		}
+		this.storeValue(uri)
 	} else {
 		this.storeValue(string(array))
 	}
+	return nil
 }
 
 func (this *testCallbacks) storeValue(value interface{}) {
@@ -303,8 +312,7 @@ func (this *testCallbacks) OnArrayData(bytes []byte) error {
 }
 
 func (this *testCallbacks) OnArrayEnd() error {
-	this.arrayEnd()
-	return nil
+	return this.arrayEnd()
 }
 
 func decodeDocument(maxDepth int, encoded []byte) (result interface{}, err error) {
