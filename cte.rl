@@ -2,7 +2,7 @@ package cte
 
 import (
     "fmt"
-//    "math"
+    "math"
 //    "time"
 )
 
@@ -12,7 +12,7 @@ type CteDecoderCallbacks interface {
     OnPositiveInt(value uint64) error
     OnNegativeInt(value uint64) error
     OnDecimalFloat(significand int64, exponent int) error
-//    OnFloat(value float64) error
+    OnFloat(value float64) error
 //    OnDate(value time.Time) error
 //    OnTime(value time.Time) error
 //    OnTimestamp(value time.Time) error
@@ -75,30 +75,37 @@ type CteDecoderCallbacks interface {
         this.exponentSign = -1
     });
 
-    whole_digit = [0-9] @{
+    whole_digit_decimal = [0-9] @{
         this.significand = this.significand * 10 + uint64(fc - '0')
     };
 
-    fractional_digit = '0' @{
-        this.zeroAdjust--
-        this.zeroMagnitude *= 10
-    } | [1-9] @{
-        this.significand *= this.zeroMagnitude
-        this.exponentAdjust += this.zeroAdjust
-        this.zeroMagnitude = 1
-        this.zeroAdjust = 0
+    whole_digit_hex = [0-9] @{
+        this.significand = (this.significand << 4) | uint64(fc - '0')
+    } | [a-f] @{
+        this.significand = (this.significand << 4) | uint64(fc - 'a' + 10)
+    };
+
+    fractional_digit_decimal = [0-9] @{
         this.significand = this.significand * 10 + uint64(fc - '0')
         this.exponentAdjust--
+    };
+
+    fractional_digit_hex = [0-9] @{
+        this.significand = (this.significand << 4) | uint64(fc - '0')
+        this.exponentAdjust -= 4
+    } | [a-f] @{
+        this.significand = (this.significand << 4) | uint64(fc - 'a' + 10)
+        this.exponentAdjust -= 4
     };
 
     exponent_digit = [0-9] @{
         this.exponent = this.exponent * 10 + int(fc - '0')
     };
 
-    decimal_exponent = 'e' exponent_sign? exponent_digit+;
+    exponent_decimal = 'e' exponent_sign? exponent_digit+;
+    exponent_hex = 'p' exponent_sign? exponent_digit+;
 
-    numeric_first_component = significand_sign? leading_zeroes whole_digit+;
-    numeric_second_component = '.' fractional_digit+;
+    numeric_first_component = significand_sign? leading_zeroes whole_digit_decimal+;
 
     integer_binary = significand_sign? "0b" [0-1]+ @{
         this.significand = (this.significand << 1) | uint64(fc - '0')
@@ -108,11 +115,7 @@ type CteDecoderCallbacks interface {
         this.significand = (this.significand << 3) | uint64(fc - '0')
     };
 
-    integer_hex = significand_sign? "0x" ([0-9] @{
-        this.significand = (this.significand << 4) | uint64(fc - '0')
-    } | [a-f] @{
-        this.significand = (this.significand << 4) | uint64(fc - 'a' + 10)
-    })+;
+    integer_hex = significand_sign? "0x" whole_digit_hex+;
 
     integer = (numeric_first_component | integer_binary | integer_octal | integer_hex) %{
         if this.significandSign >= 0 {
@@ -124,16 +127,26 @@ type CteDecoderCallbacks interface {
         this.significand = 0
     };
 
-    float = numeric_first_component numeric_second_component decimal_exponent? %{
+    float_decimal = numeric_first_component '.' fractional_digit_decimal+ exponent_decimal? %{
         callbacks.OnDecimalFloat(int64(this.significand) * int64(this.significandSign), (this.exponent+this.exponentAdjust) * this.exponentSign)
         this.significandSign = 1
         this.significand = 0
         this.exponentAdjust = 0
-        this.zeroAdjust = 0
-        this.zeroMagnitude = 1
         this.exponentSign = 1
         this.exponent = 0
     };
+
+    float_hex = integer_hex '.' fractional_digit_hex+ exponent_hex %{
+        exponent := float64((this.exponent * this.exponentSign + this.exponentAdjust))
+        callbacks.OnFloat(float64(this.significandSign) * float64(this.significand) * math.Pow(2.0, exponent))
+        this.significandSign = 1
+        this.significand = 0
+        this.exponentAdjust = 0
+        this.exponentSign = 1
+        this.exponent = 0
+    };
+
+    float = float_decimal | float_hex;
 
     list = '[' @{
         err = callbacks.OnListBegin()
@@ -328,15 +341,12 @@ type Parser struct {
     exponent int
     exponentSign int
     exponentAdjust int
-    zeroAdjust int
-    zeroMagnitude uint64
 }
 
 func (this *Parser) Init(maxDepth int) {
     this.stack = make([]int, maxDepth)
     this.significandSign = 1
     this.exponentSign = 1
-    this.zeroMagnitude = 1
 }
 
 func NewParser(maxDepth int) *Parser {

@@ -59,11 +59,22 @@ func TestFloat(t *testing.T) {
 	assertDecoded(t, "1.0", 1.0, 0)
 	assertDecoded(t, "51.34", 51.34, 0)
 	assertDecoded(t, "-51.34", -51.34, 0)
+	assertDecoded(t, "0510.03040", 510.0304, 0.00000001)
 	assertDecoded(t, "4.5104e-20", 4.5104e-20, 0.000000001)
 	assertDecoded(t, "4.5104e20", 4.5104e20, 0.000000001)
 	assertDecoded(t, "4.5104e+20", 4.5104e+20, 0.000000001)
 	assertDecoded(t, "-4.5104e+20", -4.5104e+20, 0.000000001)
 	assertDecoded(t, "-1.49465123566589", -1.49465123566589, 0.0000000000000001)
+}
+
+func TestFloatHex(t *testing.T) {
+	assertDecoded(t, "0x1.0p0", 0x1.0p0, 0)
+	assertDecoded(t, "0x0.1p0", 0x0.1p0, 0)
+	assertDecoded(t, "0x1.f9a773c1p0", 0x1.f9a773c1p0, 0)
+	assertDecoded(t, "-0xf.9a05p41", -0xf.9a05p41, 0)
+	assertDecoded(t, "-0xf.9a05p+41", -0xf.9a05p+41, 0)
+	assertDecoded(t, "-0xf.9a05p-41", -0xf.9a05p-41, 0)
+	assertDecoded(t, "0x1.0p-1", 0x1.0p-1, 0)
 }
 
 func TestString(t *testing.T) {
