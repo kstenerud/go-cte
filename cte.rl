@@ -3,7 +3,7 @@ package cte
 import (
     "fmt"
     "math"
-//    "time"
+    "time"
 )
 
 type CteDecoderCallbacks interface {
@@ -13,9 +13,9 @@ type CteDecoderCallbacks interface {
     OnNegativeInt(value uint64) error
     OnDecimalFloat(significand int64, exponent int) error
     OnFloat(value float64) error
-//    OnDate(value time.Time) error
-//    OnTime(value time.Time) error
-//    OnTimestamp(value time.Time) error
+    OnDate(value time.Time) error
+    OnTime(value time.Time) error
+    OnTimestamp(value time.Time) error
     OnListBegin() error
     OnOrderedMapBegin() error
     OnUnorderedMapBegin() error
@@ -147,6 +147,24 @@ type CteDecoderCallbacks interface {
 
     float = float_decimal | float_hex;
 
+    month = [0-9]{1,2} @{
+        this.month = this.month * 10 + int(fc - '0')
+    };
+
+    day = [0-9]{1,2} @{
+        this.day = this.day * 10 + int(fc - '0')
+    };
+
+    date_portion = numeric_first_component '-' month '-' day;
+
+    date = date_portion %{
+        callbacks.OnDate(time.Date(int(this.significand), time.Month(this.month), this.day, 0, 0, 0, 0, time.UTC))
+        this.significandSign = 1
+        this.significand = 0
+        this.month = 0
+        this.day = 0
+    };
+
     list = '[' @{
         err = callbacks.OnListBegin()
         if err != nil {
@@ -224,7 +242,7 @@ type CteDecoderCallbacks interface {
     };
 
 
-    keyable = true | false | integer | float | string | uri;
+    keyable = true | false | integer | float | string | uri | date;
     nonkeyable = nil | list | unordered_map | ordered_map;
     object_pre = (ws | metadata_map | comment | multiline_comment)*;
     object_post = (ws | comment | multiline_comment)*;
@@ -361,6 +379,12 @@ type Parser struct {
     exponent int
     exponentSign int
     exponentAdjust int
+    month int
+    day int
+    hour int
+    minute int
+    second int
+    nanosecond int
 }
 
 func (this *Parser) Init(maxDepth int) {

@@ -1,6 +1,7 @@
 package cte
 
 import (
+	"time"
 	"net/url"
 	"testing"
 	// "time"
@@ -83,7 +84,7 @@ func TestString(t *testing.T) {
 	assertDecoded(t, "\"String\\twith\\nnewlines\\rcrs\\\" and \\\\ quotes\"", "String\twith\nnewlines\rcrs\" and \\ quotes", 0)
 }
 
-func makeURL(str string) *url.URL {
+func newURL(str string) *url.URL {
 	url, err := url.Parse(str)
 	if err != nil {
 		url, err = url.Parse("http://parse.error")
@@ -92,9 +93,22 @@ func makeURL(str string) *url.URL {
 }
 
 func TestURI(t *testing.T) {
-	assertDecoded(t, "u\"http://example.com\"", makeURL("http://example.com"), 0)
-	assertDecoded(t, "u\"mailto:me@me.com\"", makeURL("mailto:me@me.com"), 0)
-	assertDecoded(t, "u\"urn:oasis:names:specification:docbook:dtd:xml:4.1.2\"", makeURL("urn:oasis:names:specification:docbook:dtd:xml:4.1.2"), 0)
+	assertDecoded(t, "u\"http://example.com\"", newURL("http://example.com"), 0)
+	assertDecoded(t, "u\"mailto:me@me.com\"", newURL("mailto:me@me.com"), 0)
+	assertDecoded(t, "u\"urn:oasis:names:specification:docbook:dtd:xml:4.1.2\"", newURL("urn:oasis:names:specification:docbook:dtd:xml:4.1.2"), 0)
+}
+
+func newDate(year int, month int, day int) time.Time {
+	location := time.UTC
+	hour := 0
+	minute := 0
+	second := 0
+	nanosecond := 0
+	return time.Date(year, time.Month(month), day, hour, minute, second, nanosecond, location)
+}
+
+func TestDate(t *testing.T) {
+	assertDecoded(t, "1000-10-1", newDate(1000, 10, 1), 0)
 }
 
 func TestList(t *testing.T) {
