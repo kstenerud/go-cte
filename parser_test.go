@@ -36,6 +36,24 @@ func TestInteger(t *testing.T) {
 	assertDecoded(t, "-844452230", -844452230, 0)
 }
 
+func TestIntegerBinary(t *testing.T) {
+	assertDecoded(t, "0b0", 0, 0)
+	assertDecoded(t, "0b1", 1, 0)
+	assertDecoded(t, "0b100111110100", 0x9f4, 0)
+}
+
+func TestIntegerOctal(t *testing.T) {
+	assertDecoded(t, "0o0", 0, 0)
+	assertDecoded(t, "0o1", 1, 0)
+	assertDecoded(t, "0o755", 0x1ed, 0)
+}
+
+func TestIntegerHex(t *testing.T) {
+	assertDecoded(t, "0x0", 0, 0)
+	assertDecoded(t, "0x1", 1, 0)
+	assertDecoded(t, "0x123456789abcdef", 0x123456789abcdef, 0)
+}
+
 func TestFloat(t *testing.T) {
 	assertDecoded(t, "0.1", 0.1, 0)
 	assertDecoded(t, "1.0", 1.0, 0)

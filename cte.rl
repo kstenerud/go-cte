@@ -100,7 +100,21 @@ type CteDecoderCallbacks interface {
     numeric_first_component = significand_sign? leading_zeroes whole_digit+;
     numeric_second_component = '.' fractional_digit+;
 
-    integer = numeric_first_component %{
+    integer_binary = significand_sign? "0b" [0-1]+ @{
+        this.significand = (this.significand << 1) | uint64(fc - '0')
+    };
+
+    integer_octal = significand_sign? "0o" [0-7]+ @{
+        this.significand = (this.significand << 3) | uint64(fc - '0')
+    };
+
+    integer_hex = significand_sign? "0x" ([0-9] @{
+        this.significand = (this.significand << 4) | uint64(fc - '0')
+    } | [a-f] @{
+        this.significand = (this.significand << 4) | uint64(fc - 'a' + 10)
+    })+;
+
+    integer = (numeric_first_component | integer_binary | integer_octal | integer_hex) %{
         if this.significandSign >= 0 {
             callbacks.OnPositiveInt(this.significand)
         } else {
