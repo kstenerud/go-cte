@@ -2,6 +2,7 @@ package cte
 
 import (
     "fmt"
+//    "math"
 //    "time"
 )
 
@@ -10,6 +11,7 @@ type CteDecoderCallbacks interface {
     OnBool(value bool) error
     OnPositiveInt(value uint64) error
     OnNegativeInt(value uint64) error
+    OnDecimalFloat(significand int64, exponent int) error
 //    OnFloat(value float64) error
 //    OnDate(value time.Time) error
 //    OnTime(value time.Time) error
@@ -63,27 +65,60 @@ type CteDecoderCallbacks interface {
         }
     };
 
-    negative = '-' @{
+    leading_zeroes = 0*;
+
+    significand_sign = '-' @{
         this.significandSign = -1
     };
 
-    significand_digit = [0-9] @{
-        this.significand = this.significand * 10 + uint64(fc) - uint64('0')
+    exponent_sign = '+' | ('-' @{
+        this.exponentSign = -1
+    });
+
+    whole_digit = [0-9] @{
+        this.significand = this.significand * 10 + uint64(fc - '0')
     };
 
-    integer = negative? significand_digit+ %{
-        value := this.significand
-        sign := this.significandSign
-        this.significand = 0
-        this.significandSign = 1
-        if sign < 0 {
-            err = callbacks.OnNegativeInt(value)
+    fractional_digit = '0' @{
+        this.zeroAdjust--
+        this.zeroMagnitude *= 10
+    } | [1-9] @{
+        this.significand *= this.zeroMagnitude
+        this.exponentAdjust += this.zeroAdjust
+        this.zeroMagnitude = 1
+        this.zeroAdjust = 0
+        this.significand = this.significand * 10 + uint64(fc - '0')
+        this.exponentAdjust--
+    };
+
+    exponent_digit = [0-9] @{
+        this.exponent = this.exponent * 10 + int(fc - '0')
+    };
+
+    decimal_exponent = 'e' exponent_sign? exponent_digit+;
+
+    numeric_first_component = significand_sign? leading_zeroes whole_digit+;
+    numeric_second_component = '.' fractional_digit+;
+
+    integer = numeric_first_component %{
+        if this.significandSign >= 0 {
+            callbacks.OnPositiveInt(this.significand)
         } else {
-            err = callbacks.OnPositiveInt(value)
+            callbacks.OnNegativeInt(this.significand)
         }
-        if err != nil {
-            fbreak;
-        }
+        this.significandSign = 1
+        this.significand = 0
+    };
+
+    float = numeric_first_component numeric_second_component decimal_exponent? %{
+        callbacks.OnDecimalFloat(int64(this.significand) * int64(this.significandSign), (this.exponent+this.exponentAdjust) * this.exponentSign)
+        this.significandSign = 1
+        this.significand = 0
+        this.exponentAdjust = 0
+        this.zeroAdjust = 0
+        this.zeroMagnitude = 1
+        this.exponentSign = 1
+        this.exponent = 0
     };
 
     list = '[' @{
@@ -154,7 +189,7 @@ type CteDecoderCallbacks interface {
     };
 
 
-    keyable = true | false | integer | string;
+    keyable = true | false | integer | float | string;
     nonkeyable = nil | list | unordered_map | ordered_map;
     object_pre = (ws | metadata_map | comment | multiline_comment)*;
     object_post = (ws | comment | multiline_comment)*;
@@ -257,7 +292,9 @@ type CteDecoderCallbacks interface {
             fret;
         };
 
-    main := value ws*;
+    main := value ws* @/{
+        err = fmt.Errorf("Incomplete document")
+    };
 }%%
 
 
@@ -272,14 +309,20 @@ type Parser struct {
     data []byte
     arrayStart int // Start of the current item of interest
     commentDepth int
-    exponent uint64
-    exponentSign int
     significand uint64
     significandSign int
+    exponent int
+    exponentSign int
+    exponentAdjust int
+    zeroAdjust int
+    zeroMagnitude uint64
 }
 
 func (this *Parser) Init(maxDepth int) {
     this.stack = make([]int, maxDepth)
+    this.significandSign = 1
+    this.exponentSign = 1
+    this.zeroMagnitude = 1
 }
 
 func NewParser(maxDepth int) *Parser {

@@ -1,6 +1,7 @@
 package cte
 
 import (
+	"math"
 	// "bytes"
 	"fmt"
 	"strings"
@@ -9,6 +10,10 @@ import (
 )
 
 // General
+
+func floatEqual(a float64, b float64, tolerance float64) bool {
+	return math.Abs(a-b) < tolerance
+}
 
 func asList(values ...interface{}) []interface{} {
 	return values
@@ -227,6 +232,11 @@ func (this *testCallbacks) OnFloat(value float64) error {
 	return nil
 }
 
+func (this *testCallbacks) OnDecimalFloat(significand int64, exponent int) error {
+	this.storeValue(float64(significand) * math.Pow10(exponent))
+	return nil
+}
+
 func (this *testCallbacks) OnDate(value time.Time) error {
 	this.storeValue(value)
 	return nil
@@ -336,13 +346,13 @@ func tryDecode(maxDepth int, encoded []byte) error {
 	return err
 }
 
-func assertDecoded(t *testing.T, encoded string, expected interface{}) {
+func assertDecoded(t *testing.T, encoded string, expected interface{}, tolerance float64) {
 	actual, err := decodeDocument(100, []byte(encoded))
 	if err != nil {
 		t.Errorf("Error: %v", err)
 		return
 	}
-	if !DeepEquivalence(actual, expected) {
+	if !DeepEquivalence(actual, expected, tolerance) {
 		t.Errorf("Expected [%v], actual [%v]", expected, actual)
 	}
 }

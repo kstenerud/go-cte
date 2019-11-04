@@ -192,7 +192,7 @@ func getMapValue(aMap reflect.Value, aKey reflect.Value) reflect.Value {
 	return initialResult
 }
 
-func deepEquivalence(a, b reflect.Value) bool {
+func deepEquivalence(a, b reflect.Value, tolerance float64) bool {
 	if !a.IsValid() && !b.IsValid() {
 		// Special case: untyped nil
 		return true
@@ -200,7 +200,7 @@ func deepEquivalence(a, b reflect.Value) bool {
 
 	switch a.Kind() {
 	case reflect.Interface, reflect.Ptr:
-		return deepEquivalence(a.Elem(), b.Elem())
+		return deepEquivalence(a.Elem(), b.Elem(), tolerance)
 	case reflect.Bool:
 		return a.Bool() == b.Bool()
 	case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
@@ -211,7 +211,8 @@ func deepEquivalence(a, b reflect.Value) bool {
 		return ok && a.Uint() == bValue
 	case reflect.Float32, reflect.Float64:
 		bValue, ok := asFloat(b)
-		return ok && a.Float() == bValue
+		aValue := a.Float()
+		return ok && math.Abs(aValue-bValue) <= tolerance
 	case reflect.Complex64, reflect.Complex128:
 		return a.Complex() == b.Complex()
 	case reflect.String:
@@ -225,7 +226,7 @@ func deepEquivalence(a, b reflect.Value) bool {
 			return false
 		}
 		for i := 0; i < a.Len(); i++ {
-			if !deepEquivalence(a.Index(i), b.Index(i)) {
+			if !deepEquivalence(a.Index(i), b.Index(i), tolerance) {
 				return false
 			}
 		}
@@ -239,7 +240,7 @@ func deepEquivalence(a, b reflect.Value) bool {
 			k := iter.Key()
 			av := iter.Value()
 			bv := getMapValue(b, k)
-			if !deepEquivalence(av, bv) {
+			if !deepEquivalence(av, bv, tolerance) {
 				// TODO: Search equivalent type keys
 				return false
 			}
@@ -250,7 +251,7 @@ func deepEquivalence(a, b reflect.Value) bool {
 			return false
 		}
 		for i := 0; i < a.NumField(); i++ {
-			return deepEquivalence(a.Field(i), b.Field(i))
+			return deepEquivalence(a.Field(i), b.Field(i), tolerance)
 		}
 	// case reflect.Chan:
 	// case reflect.Func:
@@ -264,7 +265,7 @@ func deepEquivalence(a, b reflect.Value) bool {
 // Equivalence means that they are either equal, or one can be converted to the
 // other's type without loss and be equal.
 // For arrays, maps, and structs, it will compare elements.
-func DeepEquivalence(a, b interface{}) (equal bool) {
+func DeepEquivalence(a, b interface{}, tolerance float64) (equal bool) {
 	defer func() {
 		if r := recover(); r != nil {
 			equal = false
@@ -273,5 +274,5 @@ func DeepEquivalence(a, b interface{}) (equal bool) {
 	if a == nil && b == nil {
 		return true
 	}
-	return deepEquivalence(reflect.ValueOf(a), reflect.ValueOf(b))
+	return deepEquivalence(reflect.ValueOf(a), reflect.ValueOf(b), tolerance)
 }
