@@ -3,7 +3,6 @@ package cte
 import (
     "fmt"
     "math"
-    "time"
 )
 
 type CteDecoderCallbacks interface {
@@ -13,15 +12,17 @@ type CteDecoderCallbacks interface {
     OnNegativeInt(value uint64) error
     OnDecimalFloat(significand int64, exponent int) error
     OnFloat(value float64) error
-    OnDate(value time.Time) error
-    OnTime(value time.Time) error
-    OnTimestamp(value time.Time) error
+    OnDate(year, month, day int) error
+    OnTimeTZ(hour, minute, second, nanosecond int, tz string) error
+    OnTimeLoc(hour, minute, second, nanosecond int, latitude, longitude float32) error
+    OnTimestampTZ(year, month, day, hour, minute, second, nanosecond int, tz string) error
+    OnTimestampLoc(year, month, day, hour, minute, second, nanosecond int, latitude, longitude float32) error
     OnListBegin() error
     OnOrderedMapBegin() error
     OnUnorderedMapBegin() error
     OnMetadataMapBegin() error
     OnContainerEnd() error
-//    OnBytesBegin() error
+    OnBytesBegin() error
     OnStringBegin() error
     OnURIBegin() error
     OnCommentBegin() error
@@ -147,22 +148,72 @@ type CteDecoderCallbacks interface {
 
     float = float_decimal | float_hex;
 
-    month = [0-9]{1,2} @{
+    month = [0-9]{1,2} ${
         this.month = this.month * 10 + int(fc - '0')
     };
 
-    day = [0-9]{1,2} @{
+    day = [0-9]{1,2} ${
         this.day = this.day * 10 + int(fc - '0')
     };
 
+    hour = [0-9]{1,2} ${
+        this.hour = this.hour * 10 + int(fc - '0')
+    };
+
+    minute = [0-9]{2} ${
+        this.minute = this.minute * 10 + int(fc - '0')
+    };
+
+    second = [0-9]{2} ${
+        this.second = this.second * 10 + int(fc - '0')
+    };
+
+    subsecond = [0-9]{1,9} ${
+        this.subsecond = this.subsecond * 10 + int(fc - '0')
+        this.subsecondMultiplier /= 10
+    };
+
+    timezone = [a-zA-Z0-9+_/\-]+ @{
+        this.timezone = append(this.timezone, fc)
+    };
+
     date_portion = numeric_first_component '-' month '-' day;
+    time_tz_portion = hour ':' minute ':' second ('.' subsecond)? ('/' timezone)?;
 
     date = date_portion %{
-        callbacks.OnDate(time.Date(int(this.significand), time.Month(this.month), this.day, 0, 0, 0, 0, time.UTC))
+        year := int(this.significand) * this.significandSign
+        callbacks.OnDate(year, this.month, this.day)
         this.significandSign = 1
         this.significand = 0
         this.month = 0
         this.day = 0
+    };
+
+    time = time_tz_portion %{
+        nanosecond := this.subsecond * this.subsecondMultiplier
+        callbacks.OnTimeTZ(this.hour, this.minute, this.second, nanosecond, string(this.timezone))
+        this.hour = 0
+        this.minute = 0
+        this.second = 0
+        this.subsecond = 0
+        this.subsecondMultiplier = 1000000000
+        this.timezone = this.timezone[:]
+    };
+
+    timestamp = date_portion '/' time_tz_portion %{
+        year := int(this.significand) * this.significandSign
+        nanosecond := this.subsecond * this.subsecondMultiplier
+        callbacks.OnTimestampTZ(year, this.month, this.day, this.hour, this.minute, this.second, nanosecond, string(this.timezone))
+        this.significandSign = 1
+        this.significand = 0
+        this.month = 0
+        this.day = 0
+        this.hour = 0
+        this.minute = 0
+        this.second = 0
+        this.subsecond = 0
+        this.subsecondMultiplier = 1000000000
+        this.timezone = this.timezone[:]
     };
 
     list = '[' @{
@@ -242,7 +293,7 @@ type CteDecoderCallbacks interface {
     };
 
 
-    keyable = true | false | integer | float | string | uri | date;
+    keyable = true | false | integer | float | string | uri | date | time | timestamp;
     nonkeyable = nil | list | unordered_map | ordered_map;
     object_pre = (ws | metadata_map | comment | multiline_comment)*;
     object_post = (ws | comment | multiline_comment)*;
@@ -384,13 +435,17 @@ type Parser struct {
     hour int
     minute int
     second int
-    nanosecond int
+    subsecond int
+    subsecondMultiplier int
+    timezone []byte
 }
 
 func (this *Parser) Init(maxDepth int) {
     this.stack = make([]int, maxDepth)
     this.significandSign = 1
     this.exponentSign = 1
+    this.subsecondMultiplier = 1000000000
+    this.timezone = make([]byte, 0, 40)
 }
 
 func NewParser(maxDepth int) *Parser {

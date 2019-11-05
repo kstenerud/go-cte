@@ -1,11 +1,9 @@
 package cte
 
 import (
-	"time"
-	"net/url"
 	"testing"
-	// "time"
 )
+
 
 func TestBroken(t *testing.T) {
 	assertDecodeFails(t, "$")
@@ -84,31 +82,22 @@ func TestString(t *testing.T) {
 	assertDecoded(t, "\"String\\twith\\nnewlines\\rcrs\\\" and \\\\ quotes\"", "String\twith\nnewlines\rcrs\" and \\ quotes", 0)
 }
 
-func newURL(str string) *url.URL {
-	url, err := url.Parse(str)
-	if err != nil {
-		url, err = url.Parse("http://parse.error")
-	}
-	return url
-}
-
 func TestURI(t *testing.T) {
 	assertDecoded(t, "u\"http://example.com\"", newURL("http://example.com"), 0)
 	assertDecoded(t, "u\"mailto:me@me.com\"", newURL("mailto:me@me.com"), 0)
 	assertDecoded(t, "u\"urn:oasis:names:specification:docbook:dtd:xml:4.1.2\"", newURL("urn:oasis:names:specification:docbook:dtd:xml:4.1.2"), 0)
 }
 
-func newDate(year int, month int, day int) time.Time {
-	location := time.UTC
-	hour := 0
-	minute := 0
-	second := 0
-	nanosecond := 0
-	return time.Date(year, time.Month(month), day, hour, minute, second, nanosecond, location)
-}
-
 func TestDate(t *testing.T) {
 	assertDecoded(t, "1000-10-1", newDate(1000, 10, 1), 0)
+}
+
+func TestTime(t *testing.T) {
+	assertDecoded(t, "10:45:01.3014234/Europe/Paris", newTimeTZ(10, 45, 1, 301423400, "Europe/Paris"), 0)
+}
+
+func TestTimestamp(t *testing.T) {
+	assertDecoded(t, "2001-1-2/5:08:09.999/America/Los_Angeles", newTimestampTZ(2001, 1, 2, 5, 8, 9, 999000000, "America/Los_Angeles"), 0)
 }
 
 func TestList(t *testing.T) {

@@ -246,13 +246,42 @@ func (this *testCallbacks) OnDecimalFloat(significand int64, exponent int) error
 	return nil
 }
 
-func (this *testCallbacks) OnDate(value time.Time) error {
-	this.storeValue(value)
+func (this *testCallbacks) OnDate(year, month, day int) error {
+	this.storeValue(time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC))
 	return nil
 }
 
-func (this *testCallbacks) OnTime(value time.Time) error {
-	this.storeValue(value)
+func (this *testCallbacks) OnTimeTZ(hour, minute, second, nanosecond int, tz string) error {
+	loc, err := time.LoadLocation(tz)
+	if err != nil {
+		return err
+	}
+	baseDate := time.Now()
+	this.storeValue(time.Date(baseDate.Year(), baseDate.Month(), baseDate.Day(), hour, minute, second, nanosecond, loc))
+	return nil
+}
+
+func (this *testCallbacks) OnTimeLoc(hour, minute, second, nanosecond int, latitude, longitude float32) error {
+	// TODO: Something?
+	baseDate := time.Now()
+	loc := time.UTC
+	this.storeValue(time.Date(baseDate.Year(), baseDate.Month(), baseDate.Day(), hour, minute, second, nanosecond, loc))
+	return nil
+}
+
+func (this *testCallbacks) OnTimestampTZ(year, month, day, hour, minute, second, nanosecond int, tz string) error {
+	loc, err := time.LoadLocation(tz)
+	if err != nil {
+		return err
+	}
+	this.storeValue(time.Date(year, time.Month(month), day, hour, minute, second, nanosecond, loc))
+	return nil
+}
+
+func (this *testCallbacks) OnTimestampLoc(year, month, day, hour, minute, second, nanosecond int, latitude, longitude float32) error {
+	// TODO: Something?
+	loc := time.UTC
+	this.storeValue(time.Date(year, time.Month(month), day, hour, minute, second, nanosecond, loc))
 	return nil
 }
 
@@ -472,4 +501,38 @@ func ShortCircuit(errors ...error) error {
 		}
 	}
 	return nil
+}
+
+func newURL(str string) *url.URL {
+	url, err := url.Parse(str)
+	if err != nil {
+		url, err = url.Parse("http://parse.error")
+	}
+	return url
+}
+
+func newDate(year int, month int, day int) time.Time {
+	location := time.UTC
+	hour := 0
+	minute := 0
+	second := 0
+	nanosecond := 0
+	return time.Date(year, time.Month(month), day, hour, minute, second, nanosecond, location)
+}
+
+func newTimeTZ(hour int, minute int, second int, nanosecond int, timezone string) time.Time {
+	location, err := time.LoadLocation(timezone)
+	if err != nil {
+		panic(err)
+	}
+	baseTime := time.Now()
+	return time.Date(baseTime.Year(), baseTime.Month(), baseTime.Day(), hour, minute, second, nanosecond, location)
+}
+
+func newTimestampTZ(year int, month int, day int, hour int, minute int, second int, nanosecond int, timezone string) time.Time {
+	location, err := time.LoadLocation(timezone)
+	if err != nil {
+		panic(err)
+	}
+	return time.Date(year, time.Month(month), day, hour, minute, second, nanosecond, location)
 }
