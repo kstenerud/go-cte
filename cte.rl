@@ -41,7 +41,7 @@ type CteDecoderCallbacks interface {
            (0xf0..0xf4 0x80..0xbf 0x80..0xbf 0x80..0xbf);
 
     unquoted_safe_first_char = [A-Za-z_] | utf8;
-    unquoted_safe = unquoted_safe_first_char | [0-9.] | '-';
+    unquoted_safe = unquoted_safe_first_char | [0-9];
     unquoted_string = unquoted_safe_first_char unquoted_safe*;
 
     nil = "nil" @{
@@ -147,6 +147,14 @@ type CteDecoderCallbacks interface {
     };
 
     float = float_decimal | float_hex;
+
+    inf = significand_sign? "inf" %{
+        callbacks.OnFloat(math.Inf(this.significandSign))
+        this.significandSign = 1
+    };
+
+    nan = "nan" %{callbacks.OnFloat(math.NaN())};
+    snan = "snan" %{callbacks.OnFloat(math.NaN())}; # Just map it to regular NaN
 
     month = [0-9]{1,2} ${
         this.month = this.month * 10 + int(fc - '0')
@@ -293,8 +301,8 @@ type CteDecoderCallbacks interface {
     };
 
 
-    keyable = true | false | integer | float | string | uri | date | time | timestamp;
-    nonkeyable = nil | list | unordered_map | ordered_map;
+    keyable = true | false | integer | float | inf | string | uri | date | time | timestamp;
+    nonkeyable = nil | list | unordered_map | ordered_map | nan | snan;
     object_pre = (ws | metadata_map | comment | multiline_comment)*;
     object_post = (ws | comment | multiline_comment)*;
     value = object_pre (keyable | nonkeyable);

@@ -212,7 +212,16 @@ func deepEquivalence(a, b reflect.Value, tolerance float64) bool {
 	case reflect.Float32, reflect.Float64:
 		bValue, ok := asFloat(b)
 		aValue := a.Float()
-		return ok && math.Abs(aValue-bValue) <= tolerance
+		if !ok {
+			return false
+		}
+		if math.IsNaN(aValue) == math.IsNaN(bValue) {
+			return true
+		}
+		if aValue == bValue {
+			return true
+		}
+		return math.Abs(aValue-bValue) <= tolerance
 	case reflect.Complex64, reflect.Complex128:
 		return a.Complex() == b.Complex()
 	case reflect.String:

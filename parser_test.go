@@ -1,6 +1,7 @@
 package cte
 
 import (
+	"math"
 	"testing"
 )
 
@@ -75,6 +76,17 @@ func TestFloatHex(t *testing.T) {
 	assertDecoded(t, "-0xf.9a05p+41", -0xf.9a05p+41, 0)
 	assertDecoded(t, "-0xf.9a05p-41", -0xf.9a05p-41, 0)
 	assertDecoded(t, "0x1.0p-1", 0x1.0p-1, 0)
+}
+
+func TestInf(t *testing.T) {
+	assertDecoded(t, "inf", math.Inf(1), 0)
+	assertDecoded(t, "-inf", math.Inf(-1), 0)
+}
+
+func TestNan(t *testing.T) {
+	assertDecoded(t, "nan", math.NaN(), 0)
+	// Note: snan is converted to regular nan
+	assertDecoded(t, "snan", math.NaN(), 0)
 }
 
 func TestString(t *testing.T) {
