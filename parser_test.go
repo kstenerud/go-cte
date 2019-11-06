@@ -94,6 +94,16 @@ func TestString(t *testing.T) {
 	assertDecoded(t, "\"String\\twith\\nnewlines\\rcrs\\\" and \\\\ quotes\"", "String\twith\nnewlines\rcrs\" and \\ quotes", 0)
 }
 
+func TestUnquotedString(t *testing.T) {
+	assertDecoded(t, "a", "a", 0)
+	assertDecoded(t, "b", "b", 0)
+	assertDecoded(t, "u", "u", 0)
+	assertDecoded(t, "abcd", "abcd", 0)
+	assertDecoded(t, "_a_b_c_d_", "_a_b_c_d_", 0)
+	assertDecoded(t, "number_8", "number_8", 0)
+	assertDecoded(t, "飲み物", "飲み物", 0)
+}
+
 func TestURI(t *testing.T) {
 	assertDecoded(t, "u\"http://example.com\"", newURL("http://example.com"), 0)
 	assertDecoded(t, "u\"mailto:me@me.com\"", newURL("mailto:me@me.com"), 0)

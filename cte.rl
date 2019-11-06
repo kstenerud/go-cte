@@ -42,7 +42,6 @@ type CteDecoderCallbacks interface {
 
     unquoted_safe_first_char = [A-Za-z_] | utf8;
     unquoted_safe = unquoted_safe_first_char | [0-9];
-    unquoted_string = unquoted_safe_first_char unquoted_safe*;
 
     nil = "@nil" @{
         err = callbacks.OnNil()
@@ -320,6 +319,28 @@ type CteDecoderCallbacks interface {
         fcall string_iterate;
     };
 
+    unquoted_string = unquoted_safe_first_char ('"' | unquoted_safe*) >{
+        this.arrayStart = fpc - 1
+    } %{
+        if this.data[fpc-1] != '"' {
+            err = callbacks.OnStringBegin()
+            if err != nil {
+                fmt.Printf("Err %v\n", err)
+                fbreak;
+            }
+            err = callbacks.OnArrayData(this.data[this.arrayStart:fpc])
+            if err != nil {
+                fmt.Printf("Err %v\n", err)
+                fbreak;
+            }
+            err = callbacks.OnArrayEnd()
+            if err != nil {
+                fmt.Printf("Err %v\n", err)
+                fbreak;
+            }
+        }
+    };
+
     uri = 'u' '"' @{
         this.arrayStart = fpc + 1
         err = callbacks.OnURIBegin()
@@ -330,7 +351,7 @@ type CteDecoderCallbacks interface {
     };
 
 
-    keyable = true | false | integer | float | inf | string | uri | date | time | timestamp;
+    keyable = true | false | integer | float | inf | string | unquoted_string | uri | date | time | timestamp;
     nonkeyable = nil | list | unordered_map | ordered_map | nan | snan;
     object_pre = (ws | metadata_map | comment | multiline_comment)*;
     object_post = (ws | comment | multiline_comment)*;
