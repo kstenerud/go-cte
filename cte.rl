@@ -119,42 +119,65 @@ type CteDecoderCallbacks interface {
 
     integer = (numeric_first_component | integer_binary | integer_octal | integer_hex) %{
         if this.significandSign >= 0 {
-            callbacks.OnPositiveInt(this.significand)
+            err = callbacks.OnPositiveInt(this.significand)
         } else {
-            callbacks.OnNegativeInt(this.significand)
+            err = callbacks.OnNegativeInt(this.significand)
         }
         this.significandSign = 1
         this.significand = 0
+        if err != nil {
+            fbreak;
+        }
     };
 
     float_decimal = numeric_first_component '.' fractional_digit_decimal+ exponent_decimal? %{
-        callbacks.OnDecimalFloat(int64(this.significand) * int64(this.significandSign), (this.exponent+this.exponentAdjust) * this.exponentSign)
+        err = callbacks.OnDecimalFloat(int64(this.significand) * int64(this.significandSign), (this.exponent+this.exponentAdjust) * this.exponentSign)
         this.significandSign = 1
         this.significand = 0
         this.exponentAdjust = 0
         this.exponentSign = 1
         this.exponent = 0
+        if err != nil {
+            fbreak;
+        }
     };
 
     float_hex = integer_hex '.' fractional_digit_hex+ exponent_hex %{
         exponent := float64((this.exponent * this.exponentSign + this.exponentAdjust))
-        callbacks.OnFloat(float64(this.significandSign) * float64(this.significand) * math.Pow(2.0, exponent))
+        err = callbacks.OnFloat(float64(this.significandSign) * float64(this.significand) * math.Pow(2.0, exponent))
         this.significandSign = 1
         this.significand = 0
         this.exponentAdjust = 0
         this.exponentSign = 1
         this.exponent = 0
+        if err != nil {
+            fbreak;
+        }
     };
 
     float = float_decimal | float_hex;
 
     inf = significand_sign? "inf" %{
-        callbacks.OnFloat(math.Inf(this.significandSign))
+        err = callbacks.OnFloat(math.Inf(this.significandSign))
         this.significandSign = 1
+        if err != nil {
+            fbreak;
+        }
     };
 
-    nan = "nan" %{callbacks.OnFloat(math.NaN())};
-    snan = "snan" %{callbacks.OnFloat(math.NaN())}; # Just map it to regular NaN
+    nan = "nan" %{
+        err = callbacks.OnFloat(math.NaN())
+        if err != nil {
+            fbreak;
+        }
+    };
+    snan = "snan" %{
+        // Just map it to regular NaN
+        err = callbacks.OnFloat(math.NaN())
+        if err != nil {
+            fbreak;
+        }
+    };
 
     month = [0-9]{1,2} ${
         this.month = this.month * 10 + int(fc - '0')
@@ -190,28 +213,34 @@ type CteDecoderCallbacks interface {
 
     date = date_portion %{
         year := int(this.significand) * this.significandSign
-        callbacks.OnDate(year, this.month, this.day)
+        err = callbacks.OnDate(year, this.month, this.day)
         this.significandSign = 1
         this.significand = 0
         this.month = 0
         this.day = 0
+        if err != nil {
+            fbreak;
+        }
     };
 
     time = time_tz_portion %{
         nanosecond := this.subsecond * this.subsecondMultiplier
-        callbacks.OnTimeTZ(this.hour, this.minute, this.second, nanosecond, string(this.timezone))
+        err = callbacks.OnTimeTZ(this.hour, this.minute, this.second, nanosecond, string(this.timezone))
         this.hour = 0
         this.minute = 0
         this.second = 0
         this.subsecond = 0
         this.subsecondMultiplier = 1000000000
         this.timezone = this.timezone[:]
+        if err != nil {
+            fbreak;
+        }
     };
 
     timestamp = date_portion '/' time_tz_portion %{
         year := int(this.significand) * this.significandSign
         nanosecond := this.subsecond * this.subsecondMultiplier
-        callbacks.OnTimestampTZ(year, this.month, this.day, this.hour, this.minute, this.second, nanosecond, string(this.timezone))
+        err = callbacks.OnTimestampTZ(year, this.month, this.day, this.hour, this.minute, this.second, nanosecond, string(this.timezone))
         this.significandSign = 1
         this.significand = 0
         this.month = 0
@@ -222,6 +251,9 @@ type CteDecoderCallbacks interface {
         this.subsecond = 0
         this.subsecondMultiplier = 1000000000
         this.timezone = this.timezone[:]
+        if err != nil {
+            fbreak;
+        }
     };
 
     list = '[' @{
@@ -268,17 +300,14 @@ type CteDecoderCallbacks interface {
     multiline_comment = "/*" @{
         if this.commentDepth == 0 {
             err = callbacks.OnCommentBegin()
-            if err != nil {
-                fbreak;
-            }
         } else {
             err = callbacks.OnArrayData(this.data[this.arrayStart:fpc+1])
-            if err != nil {
-                fbreak;
-            }
         }
         this.arrayStart = fpc + 1
         this.commentDepth++
+        if err != nil {
+            fbreak;
+        }
         fcall multiline_comment_iterate;
     };
 
@@ -343,12 +372,39 @@ type CteDecoderCallbacks interface {
         (
             (any - ('"' | '\\') ) |
             ('\\' (
-                ('\\' @{this.flushAndAddEscapedCharacter(fpc-1, '\\', callbacks)}) |
-                ('n' @{this.flushAndAddEscapedCharacter(fpc-1, '\n', callbacks)}) |
-                ('r' @{this.flushAndAddEscapedCharacter(fpc-1, '\r', callbacks)}) |
-                ('t' @{this.flushAndAddEscapedCharacter(fpc-1, '\t', callbacks)}) |
-                ('"' @{this.flushAndAddEscapedCharacter(fpc-1, '"', callbacks)}) |
-                ([^"nrt\\] @{return false, fmt.Errorf("\\%c: Illegal escape encoding", this.data[fpc])})
+                ('\\' @{
+                    err = this.flushAndAddEscapedCharacter(fpc-1, '\\', callbacks)
+                    if err != nil {
+                        fbreak;
+                    }
+                }) |
+                ('n' @{
+                    err = this.flushAndAddEscapedCharacter(fpc-1, '\n', callbacks)
+                    if err != nil {
+                        fbreak;
+                    }
+                }) |
+                ('r' @{
+                    err = this.flushAndAddEscapedCharacter(fpc-1, '\r', callbacks)
+                    if err != nil {
+                        fbreak;
+                    }
+                }) |
+                ('t' @{
+                    err = this.flushAndAddEscapedCharacter(fpc-1, '\t', callbacks)
+                    if err != nil {
+                        fbreak;
+                    }
+                }) |
+                ('"' @{
+                    err = this.flushAndAddEscapedCharacter(fpc-1, '"', callbacks)
+                    if err != nil {
+                        fbreak;
+                    }
+                }) |
+                ([^"nrt\\] @{
+                    return false, fmt.Errorf("\\%c: Illegal escape encoding", this.data[fpc])
+                })
                 # TODO: hex and unicode
             ))
         )*

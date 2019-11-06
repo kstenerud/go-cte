@@ -33,7 +33,7 @@ type CteDecoderCallbacks interface {
 }
 
 
-//line cte.rl:422
+//line cte.rl:478
 
 
 
@@ -1728,7 +1728,7 @@ const cte_en_metadata_map_iterate int = 503
 const cte_en_main int = 1
 
 
-//line cte.rl:426
+//line cte.rl:482
 
 type Parser struct {
     cs int // Current Ragel state
@@ -1974,110 +1974,147 @@ _match:
 //line cte.rl:120
 
         if this.significandSign >= 0 {
-            callbacks.OnPositiveInt(this.significand)
+            err = callbacks.OnPositiveInt(this.significand)
         } else {
-            callbacks.OnNegativeInt(this.significand)
+            err = callbacks.OnNegativeInt(this.significand)
         }
         this.significandSign = 1
         this.significand = 0
+        if err != nil {
+            p++; goto _out
+
+        }
     
 		case 15:
-//line cte.rl:130
+//line cte.rl:133
 
-        callbacks.OnDecimalFloat(int64(this.significand) * int64(this.significandSign), (this.exponent+this.exponentAdjust) * this.exponentSign)
+        err = callbacks.OnDecimalFloat(int64(this.significand) * int64(this.significandSign), (this.exponent+this.exponentAdjust) * this.exponentSign)
         this.significandSign = 1
         this.significand = 0
         this.exponentAdjust = 0
         this.exponentSign = 1
         this.exponent = 0
+        if err != nil {
+            p++; goto _out
+
+        }
     
 		case 16:
-//line cte.rl:139
+//line cte.rl:145
 
         exponent := float64((this.exponent * this.exponentSign + this.exponentAdjust))
-        callbacks.OnFloat(float64(this.significandSign) * float64(this.significand) * math.Pow(2.0, exponent))
+        err = callbacks.OnFloat(float64(this.significandSign) * float64(this.significand) * math.Pow(2.0, exponent))
         this.significandSign = 1
         this.significand = 0
         this.exponentAdjust = 0
         this.exponentSign = 1
         this.exponent = 0
+        if err != nil {
+            p++; goto _out
+
+        }
     
 		case 17:
-//line cte.rl:151
+//line cte.rl:160
 
-        callbacks.OnFloat(math.Inf(this.significandSign))
+        err = callbacks.OnFloat(math.Inf(this.significandSign))
         this.significandSign = 1
+        if err != nil {
+            p++; goto _out
+
+        }
     
 		case 18:
-//line cte.rl:156
-callbacks.OnFloat(math.NaN())
+//line cte.rl:168
+
+        err = callbacks.OnFloat(math.NaN())
+        if err != nil {
+            p++; goto _out
+
+        }
+    
 		case 19:
-//line cte.rl:157
-callbacks.OnFloat(math.NaN())
+//line cte.rl:174
+
+        // Just map it to regular NaN
+        err = callbacks.OnFloat(math.NaN())
+        if err != nil {
+            p++; goto _out
+
+        }
+    
 		case 20:
-//line cte.rl:159
+//line cte.rl:182
 
         this.month = this.month * 10 + int( this.data[p] - '0')
     
 		case 21:
-//line cte.rl:163
+//line cte.rl:186
 
         this.day = this.day * 10 + int( this.data[p] - '0')
     
 		case 22:
-//line cte.rl:167
+//line cte.rl:190
 
         this.hour = this.hour * 10 + int( this.data[p] - '0')
     
 		case 23:
-//line cte.rl:171
+//line cte.rl:194
 
         this.minute = this.minute * 10 + int( this.data[p] - '0')
     
 		case 24:
-//line cte.rl:175
+//line cte.rl:198
 
         this.second = this.second * 10 + int( this.data[p] - '0')
     
 		case 25:
-//line cte.rl:179
+//line cte.rl:202
 
         this.subsecond = this.subsecond * 10 + int( this.data[p] - '0')
         this.subsecondMultiplier /= 10
     
 		case 26:
-//line cte.rl:184
+//line cte.rl:207
 
         this.timezone = append(this.timezone,  this.data[p])
     
 		case 27:
-//line cte.rl:191
+//line cte.rl:214
 
         year := int(this.significand) * this.significandSign
-        callbacks.OnDate(year, this.month, this.day)
+        err = callbacks.OnDate(year, this.month, this.day)
         this.significandSign = 1
         this.significand = 0
         this.month = 0
         this.day = 0
+        if err != nil {
+            p++; goto _out
+
+        }
     
 		case 28:
-//line cte.rl:200
+//line cte.rl:226
 
         nanosecond := this.subsecond * this.subsecondMultiplier
-        callbacks.OnTimeTZ(this.hour, this.minute, this.second, nanosecond, string(this.timezone))
+        err = callbacks.OnTimeTZ(this.hour, this.minute, this.second, nanosecond, string(this.timezone))
         this.hour = 0
         this.minute = 0
         this.second = 0
         this.subsecond = 0
         this.subsecondMultiplier = 1000000000
         this.timezone = this.timezone[:]
+        if err != nil {
+            p++; goto _out
+
+        }
     
 		case 29:
-//line cte.rl:211
+//line cte.rl:240
 
         year := int(this.significand) * this.significandSign
         nanosecond := this.subsecond * this.subsecondMultiplier
-        callbacks.OnTimestampTZ(year, this.month, this.day, this.hour, this.minute, this.second, nanosecond, string(this.timezone))
+        err = callbacks.OnTimestampTZ(year, this.month, this.day, this.hour, this.minute, this.second, nanosecond, string(this.timezone))
         this.significandSign = 1
         this.significand = 0
         this.month = 0
@@ -2088,9 +2125,13 @@ callbacks.OnFloat(math.NaN())
         this.subsecond = 0
         this.subsecondMultiplier = 1000000000
         this.timezone = this.timezone[:]
+        if err != nil {
+            p++; goto _out
+
+        }
     
 		case 30:
-//line cte.rl:227
+//line cte.rl:259
 
         err = callbacks.OnListBegin()
         if err != nil {
@@ -2101,7 +2142,7 @@ callbacks.OnFloat(math.NaN())
 
     
 		case 31:
-//line cte.rl:235
+//line cte.rl:267
 
         err = callbacks.OnUnorderedMapBegin()
         if err != nil {
@@ -2112,7 +2153,7 @@ callbacks.OnFloat(math.NaN())
 
     
 		case 32:
-//line cte.rl:243
+//line cte.rl:275
 
         err = callbacks.OnOrderedMapBegin()
         if err != nil {
@@ -2123,7 +2164,7 @@ callbacks.OnFloat(math.NaN())
 
     
 		case 33:
-//line cte.rl:251
+//line cte.rl:283
 
         err = callbacks.OnMetadataMapBegin()
         if err != nil {
@@ -2134,7 +2175,7 @@ callbacks.OnFloat(math.NaN())
 
     
 		case 34:
-//line cte.rl:259
+//line cte.rl:291
 
         this.arrayStart = p + 1
         err = callbacks.OnCommentBegin()
@@ -2146,28 +2187,24 @@ callbacks.OnFloat(math.NaN())
 
     
 		case 35:
-//line cte.rl:268
+//line cte.rl:300
 
         if this.commentDepth == 0 {
             err = callbacks.OnCommentBegin()
-            if err != nil {
-                p++; goto _out
-
-            }
         } else {
             err = callbacks.OnArrayData(this.data[this.arrayStart:p+1])
-            if err != nil {
-                p++; goto _out
-
-            }
         }
         this.arrayStart = p + 1
         this.commentDepth++
+        if err != nil {
+            p++; goto _out
+
+        }
          this.stack[ this.top] =  this.cs;  this.top++;  this.cs = 53; goto _again
 
     
 		case 36:
-//line cte.rl:285
+//line cte.rl:314
 
         this.arrayStart = p + 1
         err = callbacks.OnStringBegin()
@@ -2179,7 +2216,7 @@ callbacks.OnFloat(math.NaN())
 
     
 		case 37:
-//line cte.rl:294
+//line cte.rl:323
 
         this.arrayStart = p + 1
         err = callbacks.OnURIBegin()
@@ -2191,7 +2228,7 @@ callbacks.OnFloat(math.NaN())
 
     
 		case 38:
-//line cte.rl:313
+//line cte.rl:342
 
             err = callbacks.OnArrayData(this.data[this.arrayStart:p])
             if err != nil {
@@ -2208,7 +2245,7 @@ goto _again
 
         
 		case 39:
-//line cte.rl:326
+//line cte.rl:355
 
             err = callbacks.OnArrayData(this.data[this.arrayStart:p-1])
             if err != nil {
@@ -2229,25 +2266,57 @@ goto _again
 
         
 		case 40:
-//line cte.rl:346
-this.flushAndAddEscapedCharacter(p-1, '\\', callbacks)
+//line cte.rl:375
+
+                    err = this.flushAndAddEscapedCharacter(p-1, '\\', callbacks)
+                    if err != nil {
+                        p++; goto _out
+
+                    }
+                
 		case 41:
-//line cte.rl:347
-this.flushAndAddEscapedCharacter(p-1, '\n', callbacks)
+//line cte.rl:381
+
+                    err = this.flushAndAddEscapedCharacter(p-1, '\n', callbacks)
+                    if err != nil {
+                        p++; goto _out
+
+                    }
+                
 		case 42:
-//line cte.rl:348
-this.flushAndAddEscapedCharacter(p-1, '\r', callbacks)
+//line cte.rl:387
+
+                    err = this.flushAndAddEscapedCharacter(p-1, '\r', callbacks)
+                    if err != nil {
+                        p++; goto _out
+
+                    }
+                
 		case 43:
-//line cte.rl:349
-this.flushAndAddEscapedCharacter(p-1, '\t', callbacks)
+//line cte.rl:393
+
+                    err = this.flushAndAddEscapedCharacter(p-1, '\t', callbacks)
+                    if err != nil {
+                        p++; goto _out
+
+                    }
+                
 		case 44:
-//line cte.rl:350
-this.flushAndAddEscapedCharacter(p-1, '"', callbacks)
+//line cte.rl:399
+
+                    err = this.flushAndAddEscapedCharacter(p-1, '"', callbacks)
+                    if err != nil {
+                        p++; goto _out
+
+                    }
+                
 		case 45:
-//line cte.rl:351
-return false, fmt.Errorf("\\%c: Illegal escape encoding", this.data[p])
+//line cte.rl:405
+
+                    return false, fmt.Errorf("\\%c: Illegal escape encoding", this.data[p])
+                
 		case 46:
-//line cte.rl:355
+//line cte.rl:411
 
             err = callbacks.OnArrayData(this.data[this.arrayStart:p])
             if err != nil {
@@ -2264,7 +2333,7 @@ goto _again
 
         
 		case 47:
-//line cte.rl:367
+//line cte.rl:423
 
             err = callbacks.OnArrayData(this.data[this.arrayStart:p])
             if err != nil {
@@ -2281,7 +2350,7 @@ goto _again
 
         
 		case 48:
-//line cte.rl:381
+//line cte.rl:437
 
             err = callbacks.OnContainerEnd()
             if err != nil {
@@ -2293,7 +2362,7 @@ goto _again
 
         
 		case 49:
-//line cte.rl:391
+//line cte.rl:447
 
             err = callbacks.OnContainerEnd()
             if err != nil {
@@ -2305,7 +2374,7 @@ goto _again
 
         
 		case 50:
-//line cte.rl:401
+//line cte.rl:457
 
             err = callbacks.OnContainerEnd()
             if err != nil {
@@ -2317,7 +2386,7 @@ goto _again
 
         
 		case 51:
-//line cte.rl:411
+//line cte.rl:467
 
             err = callbacks.OnContainerEnd()
             if err != nil {
@@ -2328,7 +2397,7 @@ goto _again
 goto _again
 
         
-//line cte.go:2332
+//line cte.go:2401
 		}
 	}
 
@@ -2351,74 +2420,111 @@ _again:
 //line cte.rl:120
 
         if this.significandSign >= 0 {
-            callbacks.OnPositiveInt(this.significand)
+            err = callbacks.OnPositiveInt(this.significand)
         } else {
-            callbacks.OnNegativeInt(this.significand)
+            err = callbacks.OnNegativeInt(this.significand)
         }
         this.significandSign = 1
         this.significand = 0
+        if err != nil {
+            p++; goto _out
+
+        }
     
 			case 15:
-//line cte.rl:130
+//line cte.rl:133
 
-        callbacks.OnDecimalFloat(int64(this.significand) * int64(this.significandSign), (this.exponent+this.exponentAdjust) * this.exponentSign)
+        err = callbacks.OnDecimalFloat(int64(this.significand) * int64(this.significandSign), (this.exponent+this.exponentAdjust) * this.exponentSign)
         this.significandSign = 1
         this.significand = 0
         this.exponentAdjust = 0
         this.exponentSign = 1
         this.exponent = 0
+        if err != nil {
+            p++; goto _out
+
+        }
     
 			case 16:
-//line cte.rl:139
+//line cte.rl:145
 
         exponent := float64((this.exponent * this.exponentSign + this.exponentAdjust))
-        callbacks.OnFloat(float64(this.significandSign) * float64(this.significand) * math.Pow(2.0, exponent))
+        err = callbacks.OnFloat(float64(this.significandSign) * float64(this.significand) * math.Pow(2.0, exponent))
         this.significandSign = 1
         this.significand = 0
         this.exponentAdjust = 0
         this.exponentSign = 1
         this.exponent = 0
+        if err != nil {
+            p++; goto _out
+
+        }
     
 			case 17:
-//line cte.rl:151
+//line cte.rl:160
 
-        callbacks.OnFloat(math.Inf(this.significandSign))
+        err = callbacks.OnFloat(math.Inf(this.significandSign))
         this.significandSign = 1
+        if err != nil {
+            p++; goto _out
+
+        }
     
 			case 18:
-//line cte.rl:156
-callbacks.OnFloat(math.NaN())
+//line cte.rl:168
+
+        err = callbacks.OnFloat(math.NaN())
+        if err != nil {
+            p++; goto _out
+
+        }
+    
 			case 19:
-//line cte.rl:157
-callbacks.OnFloat(math.NaN())
+//line cte.rl:174
+
+        // Just map it to regular NaN
+        err = callbacks.OnFloat(math.NaN())
+        if err != nil {
+            p++; goto _out
+
+        }
+    
 			case 27:
-//line cte.rl:191
+//line cte.rl:214
 
         year := int(this.significand) * this.significandSign
-        callbacks.OnDate(year, this.month, this.day)
+        err = callbacks.OnDate(year, this.month, this.day)
         this.significandSign = 1
         this.significand = 0
         this.month = 0
         this.day = 0
+        if err != nil {
+            p++; goto _out
+
+        }
     
 			case 28:
-//line cte.rl:200
+//line cte.rl:226
 
         nanosecond := this.subsecond * this.subsecondMultiplier
-        callbacks.OnTimeTZ(this.hour, this.minute, this.second, nanosecond, string(this.timezone))
+        err = callbacks.OnTimeTZ(this.hour, this.minute, this.second, nanosecond, string(this.timezone))
         this.hour = 0
         this.minute = 0
         this.second = 0
         this.subsecond = 0
         this.subsecondMultiplier = 1000000000
         this.timezone = this.timezone[:]
+        if err != nil {
+            p++; goto _out
+
+        }
     
 			case 29:
-//line cte.rl:211
+//line cte.rl:240
 
         year := int(this.significand) * this.significandSign
         nanosecond := this.subsecond * this.subsecondMultiplier
-        callbacks.OnTimestampTZ(year, this.month, this.day, this.hour, this.minute, this.second, nanosecond, string(this.timezone))
+        err = callbacks.OnTimestampTZ(year, this.month, this.day, this.hour, this.minute, this.second, nanosecond, string(this.timezone))
         this.significandSign = 1
         this.significand = 0
         this.month = 0
@@ -2429,8 +2535,12 @@ callbacks.OnFloat(math.NaN())
         this.subsecond = 0
         this.subsecondMultiplier = 1000000000
         this.timezone = this.timezone[:]
+        if err != nil {
+            p++; goto _out
+
+        }
     
-//line cte.go:2434
+//line cte.go:2544
 			}
 		}
 	}
@@ -2438,7 +2548,7 @@ callbacks.OnFloat(math.NaN())
 	_out: {}
 	}
 
-//line cte.rl:499
+//line cte.rl:555
 
 
     if this.ts > 0 {
