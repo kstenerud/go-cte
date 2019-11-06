@@ -11,9 +11,9 @@ func TestBroken(t *testing.T) {
 }
 
 func TestWhitespace(t *testing.T) {
-	assertDecoded(t, " nil", NilValue, 0)
-	assertDecoded(t, "nil ", NilValue, 0)
-	assertDecoded(t, " \tnil \t ", NilValue, 0)
+	assertDecoded(t, " @nil", NilValue, 0)
+	assertDecoded(t, "@nil ", NilValue, 0)
+	assertDecoded(t, " \t@nil \t ", NilValue, 0)
 
 	assertDecodeFails(t, "\b")
 	assertDecodeFails(t, "\f")
@@ -21,12 +21,12 @@ func TestWhitespace(t *testing.T) {
 }
 
 func TestNil(t *testing.T) {
-	assertDecoded(t, "nil", NilValue, 0)
+	assertDecoded(t, "@nil", NilValue, 0)
 }
 
 func TestBool(t *testing.T) {
-	assertDecoded(t, "true", true, 0)
-	assertDecoded(t, "false", false, 0)
+	assertDecoded(t, "@true", true, 0)
+	assertDecoded(t, "@false", false, 0)
 }
 
 func TestInteger(t *testing.T) {
@@ -79,14 +79,14 @@ func TestFloatHex(t *testing.T) {
 }
 
 func TestInf(t *testing.T) {
-	assertDecoded(t, "inf", math.Inf(1), 0)
-	assertDecoded(t, "-inf", math.Inf(-1), 0)
+	assertDecoded(t, "@inf", math.Inf(1), 0)
+	assertDecoded(t, "-@inf", math.Inf(-1), 0)
 }
 
 func TestNan(t *testing.T) {
-	assertDecoded(t, "nan", math.NaN(), 0)
+	assertDecoded(t, "@nan", math.NaN(), 0)
 	// Note: snan is converted to regular nan
-	assertDecoded(t, "snan", math.NaN(), 0)
+	assertDecoded(t, "@snan", math.NaN(), 0)
 }
 
 func TestString(t *testing.T) {
@@ -115,46 +115,46 @@ func TestTimestamp(t *testing.T) {
 func TestList(t *testing.T) {
 	assertDecoded(t, "[]", asList(), 0)
 	assertDecoded(t, "[ ]", asList(), 0)
-	assertDecoded(t, "[true]", asList(true), 0)
-	assertDecoded(t, "[true false]", asList(true, false), 0)
-	assertDecoded(t, "  [  true   false ]   ", asList(true, false), 0)
-	assertDecoded(t, "[true false  \"a string\" ]", asList(true, false, "a string"), 0)
+	assertDecoded(t, "[@true]", asList(true), 0)
+	assertDecoded(t, "[@true @false]", asList(true, false), 0)
+	assertDecoded(t, "  [  @true   @false ]   ", asList(true, false), 0)
+	assertDecoded(t, "[@true @false  \"a string\" ]", asList(true, false, "a string"), 0)
 }
 
 func TestUnorderedMap(t *testing.T) {
 	assertDecoded(t, "{}", asMap(), 0)
 	assertDecoded(t, "{ }", asMap(), 0)
-	assertDecoded(t, "{true = false}", asMap(true, false), 0)
-	assertDecoded(t, "{true=false}", asMap(true, false), 0)
-	assertDecoded(t, "  {    true   =    false   }  ", asMap(true, false), 0)
-	assertDecoded(t, "{true = false false = true}", asMap(true, false, false, true), 0)
-	assertDecoded(t, "{\"true\"=true \"false\"=false}", asMap("true", true, "false", false), 0)
+	assertDecoded(t, "{@true = @false}", asMap(true, false), 0)
+	assertDecoded(t, "{@true=@false}", asMap(true, false), 0)
+	assertDecoded(t, "  {    @true   =    @false   }  ", asMap(true, false), 0)
+	assertDecoded(t, "{@true = @false @false = @true}", asMap(true, false, false, true), 0)
+	assertDecoded(t, "{\"true\"=@true \"false\"=@false}", asMap("true", true, "false", false), 0)
 
-	assertDecodeFails(t, "{true}")
-	assertDecodeFails(t, "{true =}")
+	assertDecodeFails(t, "{@true}")
+	assertDecodeFails(t, "{@true =}")
 }
 
 func TestOrderedMap(t *testing.T) {
 	assertDecoded(t, "<>", asMap(), 0)
 	assertDecoded(t, "< >", asMap(), 0)
-	assertDecoded(t, "<true = false>", asMap(true, false), 0)
-	assertDecoded(t, "<true=false>", asMap(true, false), 0)
-	assertDecoded(t, "  <    true   =    false   >  ", asMap(true, false), 0)
-	assertDecoded(t, "<true = false false = true>", asMap(true, false, false, true), 0)
+	assertDecoded(t, "<@true = @false>", asMap(true, false), 0)
+	assertDecoded(t, "<@true=@false>", asMap(true, false), 0)
+	assertDecoded(t, "  <    @true   =    @false   >  ", asMap(true, false), 0)
+	assertDecoded(t, "<@true = @false @false = @true>", asMap(true, false, false, true), 0)
 }
 
 func TestMixedContainers(t *testing.T) {
 	assertDecoded(t, "[<>]", asList(asMap()), 0)
-	assertDecoded(t, "[<true = [nil nil]>]", asList(asMap(true, asList(NilValue, NilValue))), 0)
+	assertDecoded(t, "[<@true = [@nil @nil]>]", asList(asMap(true, asList(NilValue, NilValue))), 0)
 }
 
 func TestMetadataMap(t *testing.T) {
 	assertDecoded(t, "()", asMap(), 0)
 	assertDecoded(t, "( )", asMap(), 0)
-	assertDecoded(t, "(true = false)", asMap(true, false), 0)
-	assertDecoded(t, "(true=false)", asMap(true, false), 0)
-	assertDecoded(t, "  (    true   =    false   )  ", asMap(true, false), 0)
-	assertDecoded(t, "(true = false false = true)", asMap(true, false, false, true), 0)
+	assertDecoded(t, "(@true = @false)", asMap(true, false), 0)
+	assertDecoded(t, "(@true=@false)", asMap(true, false), 0)
+	assertDecoded(t, "  (    @true   =    @false   )  ", asMap(true, false), 0)
+	assertDecoded(t, "(@true = @false @false = @true)", asMap(true, false, false, true), 0)
 }
 
 func TestComment(t *testing.T) {

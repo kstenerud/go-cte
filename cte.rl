@@ -44,21 +44,21 @@ type CteDecoderCallbacks interface {
     unquoted_safe = unquoted_safe_first_char | [0-9];
     unquoted_string = unquoted_safe_first_char unquoted_safe*;
 
-    nil = "nil" @{
+    nil = "@nil" @{
         err = callbacks.OnNil()
         if err != nil {
             fbreak;
         }
     };
 
-    true = "true" @{
+    true = "@true" @{
         err = callbacks.OnBool(true)
         if err != nil {
             fbreak;
         }
     };
 
-    false = "false" @{
+    false = "@false" @{
         err = callbacks.OnBool(false)
         if err != nil {
             fbreak;
@@ -157,7 +157,7 @@ type CteDecoderCallbacks interface {
 
     float = float_decimal | float_hex;
 
-    inf = significand_sign? "inf" %{
+    inf = significand_sign? "@inf" %{
         err = callbacks.OnFloat(math.Inf(this.significandSign))
         this.significandSign = 1
         if err != nil {
@@ -165,13 +165,13 @@ type CteDecoderCallbacks interface {
         }
     };
 
-    nan = "nan" %{
+    nan = "@nan" %{
         err = callbacks.OnFloat(math.NaN())
         if err != nil {
             fbreak;
         }
     };
-    snan = "snan" %{
+    snan = "@snan" %{
         // Just map it to regular NaN
         err = callbacks.OnFloat(math.NaN())
         if err != nil {
@@ -406,19 +406,20 @@ type CteDecoderCallbacks interface {
                     return false, fmt.Errorf("\\%c: Illegal escape encoding", this.data[fpc])
                 })
                 # TODO: hex and unicode
-            ))
-        )*
-        '"' @{
-            err = callbacks.OnArrayData(this.data[this.arrayStart:fpc])
-            if err != nil {
-                fbreak;
-            }
-            err = callbacks.OnArrayEnd()
-            if err != nil {
-                fbreak;
-            }
-            fret;
-        };
+            )
+        )
+    )*
+    '"' @{
+        err = callbacks.OnArrayData(this.data[this.arrayStart:fpc])
+        if err != nil {
+            fbreak;
+        }
+        err = callbacks.OnArrayEnd()
+        if err != nil {
+            fbreak;
+        }
+        fret;
+    };
 
     uri_iterate := [ !#-~]+ '"' @{
             err = callbacks.OnArrayData(this.data[this.arrayStart:fpc])
