@@ -358,8 +358,16 @@ type CteDecoderCallbacks interface {
         fcall uri_iterate;
     };
 
+    binary_hex = 'h' '"' @{
+        err = callbacks.OnBytesBegin()
+        if err != nil {
+            fbreak;
+        }
+        fcall binary_hex_iterate;
+    };
 
-    keyable = true | false | integer | float | inf | string | unquoted_string | uri | date | time | timestamp;
+
+    keyable = true | false | integer | float | inf | string | unquoted_string | uri | binary_hex | date | time | timestamp;
     nonkeyable = nil | list | unordered_map | ordered_map | nan | snan;
     object_pre = (ws | metadata_map | comment | multiline_comment)*;
     object_post = (ws | comment | multiline_comment)*;
@@ -462,6 +470,35 @@ type CteDecoderCallbacks interface {
             fret;
         };
 
+    hex_numeric_hi = [0-9] @{
+        this.binaryNext = (fc - '0') << 4
+    };
+    hex_af_hi = [a-f] @{
+        this.binaryNext = (fc - 'a' + 10) << 4
+    };
+    hex_numeric_lo = [0-9] @{
+        this.binaryNext |= fc - '0'
+    };
+    hex_af_lo = [a-f] @{
+        this.binaryNext |= fc - 'a' + 10
+    };
+
+    binary_hex_sequence = ws* (hex_numeric_hi | hex_af_hi) ws* (hex_numeric_lo | hex_af_lo) @{
+        this.binaryData = append(this.binaryData, this.binaryNext)
+    };
+
+    binary_hex_iterate := binary_hex_sequence* '"' @{
+            err = callbacks.OnArrayData(this.binaryData)
+            if err != nil {
+                fbreak;
+            }
+            err = callbacks.OnArrayEnd()
+            if err != nil {
+                fbreak;
+            }
+            fret;
+        };
+
     list_iterate :=
         ( value (ws value)* )?
         ws* ']' @{
@@ -518,6 +555,8 @@ type Parser struct {
     stack []int
     data []byte
     arrayStart int // Start of the current item of interest
+    binaryData []byte
+    binaryNext byte
     commentDepth int
     significand uint64
     significandSign int
@@ -540,6 +579,7 @@ func (this *Parser) Init(maxDepth int) {
     this.exponentSign = 1
     this.subsecondMultiplier = 1000000000
     this.timezone = make([]byte, 0, 40)
+    this.binaryData = make([]byte, 0, 500)
 }
 
 func NewParser(maxDepth int) *Parser {
