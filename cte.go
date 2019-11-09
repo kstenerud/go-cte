@@ -33,7 +33,7 @@ type CteDecoderCallbacks interface {
 }
 
 
-//line cte.rl:545
+//line cte.rl:532
 
 
 
@@ -2043,7 +2043,7 @@ const cte_en_metadata_map_iterate int = 573
 const cte_en_main int = 1
 
 
-//line cte.rl:549
+//line cte.rl:536
 
 type Parser struct {
     cs int // Current Ragel state
@@ -2594,95 +2594,95 @@ _match:
 
     
 		case 41:
-//line cte.rl:379
+//line cte.rl:377
 
-            err = callbacks.OnArrayData(this.data[this.arrayStart:p])
-            if err != nil {
-                p++; goto _out
+        err = callbacks.OnArrayData(this.data[this.arrayStart:p])
+        if err != nil {
+            p++; goto _out
 
-            }
+        }
+        err = callbacks.OnArrayEnd()
+        if err != nil {
+            p++; goto _out
+
+        }
+         this.top--;  this.cs =  this.stack[ this.top]
+goto _again
+
+    
+		case 42:
+//line cte.rl:389
+
+        err = callbacks.OnArrayData(this.data[this.arrayStart:p-1])
+        if err != nil {
+            p++; goto _out
+
+        }
+        this.arrayStart = p-1
+        this.commentDepth--
+        if this.commentDepth == 0 {
             err = callbacks.OnArrayEnd()
             if err != nil {
                 p++; goto _out
 
             }
-             this.top--;  this.cs =  this.stack[ this.top]
+        }
+         this.top--;  this.cs =  this.stack[ this.top]
 goto _again
 
-        
-		case 42:
-//line cte.rl:392
+    
+		case 43:
+//line cte.rl:408
 
-            err = callbacks.OnArrayData(this.data[this.arrayStart:p-1])
-            if err != nil {
-                p++; goto _out
-
-            }
-            this.arrayStart = p-1
-            this.commentDepth--
-            if this.commentDepth == 0 {
-                err = callbacks.OnArrayEnd()
+                err = this.flushAndAddEscapedCharacter(p-1, '\\', callbacks)
                 if err != nil {
                     p++; goto _out
 
                 }
-            }
-             this.top--;  this.cs =  this.stack[ this.top]
-goto _again
-
-        
-		case 43:
-//line cte.rl:412
-
-                    err = this.flushAndAddEscapedCharacter(p-1, '\\', callbacks)
-                    if err != nil {
-                        p++; goto _out
-
-                    }
-                
+            
 		case 44:
-//line cte.rl:418
+//line cte.rl:414
 
-                    err = this.flushAndAddEscapedCharacter(p-1, '\n', callbacks)
-                    if err != nil {
-                        p++; goto _out
+                err = this.flushAndAddEscapedCharacter(p-1, '\n', callbacks)
+                if err != nil {
+                    p++; goto _out
 
-                    }
-                
+                }
+            
 		case 45:
-//line cte.rl:424
+//line cte.rl:420
 
-                    err = this.flushAndAddEscapedCharacter(p-1, '\r', callbacks)
-                    if err != nil {
-                        p++; goto _out
+                err = this.flushAndAddEscapedCharacter(p-1, '\r', callbacks)
+                if err != nil {
+                    p++; goto _out
 
-                    }
-                
+                }
+            
 		case 46:
-//line cte.rl:430
+//line cte.rl:426
 
-                    err = this.flushAndAddEscapedCharacter(p-1, '\t', callbacks)
-                    if err != nil {
-                        p++; goto _out
+                err = this.flushAndAddEscapedCharacter(p-1, '\t', callbacks)
+                if err != nil {
+                    p++; goto _out
 
-                    }
-                
+                }
+            
 		case 47:
-//line cte.rl:436
+//line cte.rl:432
 
-                    err = this.flushAndAddEscapedCharacter(p-1, '"', callbacks)
-                    if err != nil {
-                        p++; goto _out
+                err = this.flushAndAddEscapedCharacter(p-1, '"', callbacks)
+                if err != nil {
+                    p++; goto _out
 
-                    }
-                
+                }
+            
 		case 48:
-//line cte.rl:442
+//line cte.rl:438
 
-                    return false, fmt.Errorf("\\%c: Illegal escape encoding", this.data[p])
-                
+                return false, fmt.Errorf("\\%c: Illegal escape encoding", this.data[p])
+            
 		case 49:
-//line cte.rl:449
+//line cte.rl:445
 
         err = callbacks.OnArrayData(this.data[this.arrayStart:p])
         if err != nil {
@@ -2699,112 +2699,112 @@ goto _again
 
     
 		case 50:
-//line cte.rl:461
+//line cte.rl:457
 
-            err = callbacks.OnArrayData(this.data[this.arrayStart:p])
-            if err != nil {
-                p++; goto _out
+        err = callbacks.OnArrayData(this.data[this.arrayStart:p])
+        if err != nil {
+            p++; goto _out
 
-            }
-            err = callbacks.OnArrayEnd()
-            if err != nil {
-                p++; goto _out
+        }
+        err = callbacks.OnArrayEnd()
+        if err != nil {
+            p++; goto _out
 
-            }
-             this.top--;  this.cs =  this.stack[ this.top]
+        }
+         this.top--;  this.cs =  this.stack[ this.top]
 goto _again
 
-        
+    
 		case 51:
-//line cte.rl:473
+//line cte.rl:469
 
         this.binaryNext = ( this.data[p] - '0') << 4
     
 		case 52:
-//line cte.rl:476
+//line cte.rl:472
 
         this.binaryNext = ( this.data[p] - 'a' + 10) << 4
     
 		case 53:
-//line cte.rl:479
+//line cte.rl:475
 
         this.binaryNext |=  this.data[p] - '0'
     
 		case 54:
-//line cte.rl:482
+//line cte.rl:478
 
         this.binaryNext |=  this.data[p] - 'a' + 10
     
 		case 55:
-//line cte.rl:486
+//line cte.rl:481
 
         this.binaryData = append(this.binaryData, this.binaryNext)
     
 		case 56:
-//line cte.rl:490
+//line cte.rl:485
 
-            err = callbacks.OnArrayData(this.binaryData)
-            if err != nil {
-                p++; goto _out
+        err = callbacks.OnArrayData(this.binaryData)
+        if err != nil {
+            p++; goto _out
 
-            }
-            err = callbacks.OnArrayEnd()
-            if err != nil {
-                p++; goto _out
+        }
+        err = callbacks.OnArrayEnd()
+        if err != nil {
+            p++; goto _out
 
-            }
-             this.top--;  this.cs =  this.stack[ this.top]
+        }
+         this.top--;  this.cs =  this.stack[ this.top]
 goto _again
 
-        
+    
 		case 57:
-//line cte.rl:504
+//line cte.rl:497
 
-            err = callbacks.OnContainerEnd()
-            if err != nil {
-                p++; goto _out
+        err = callbacks.OnContainerEnd()
+        if err != nil {
+            p++; goto _out
 
-            }
-             this.top--;  this.cs =  this.stack[ this.top]
+        }
+         this.top--;  this.cs =  this.stack[ this.top]
 goto _again
 
-        
+    
 		case 58:
-//line cte.rl:514
+//line cte.rl:505
 
-            err = callbacks.OnContainerEnd()
-            if err != nil {
-                p++; goto _out
+        err = callbacks.OnContainerEnd()
+        if err != nil {
+            p++; goto _out
 
-            }
-             this.top--;  this.cs =  this.stack[ this.top]
+        }
+         this.top--;  this.cs =  this.stack[ this.top]
 goto _again
 
-        
+    
 		case 59:
-//line cte.rl:524
+//line cte.rl:513
 
-            err = callbacks.OnContainerEnd()
-            if err != nil {
-                p++; goto _out
+        err = callbacks.OnContainerEnd()
+        if err != nil {
+            p++; goto _out
 
-            }
-             this.top--;  this.cs =  this.stack[ this.top]
+        }
+         this.top--;  this.cs =  this.stack[ this.top]
 goto _again
 
-        
+    
 		case 60:
-//line cte.rl:534
+//line cte.rl:521
 
-            err = callbacks.OnContainerEnd()
-            if err != nil {
-                p++; goto _out
+        err = callbacks.OnContainerEnd()
+        if err != nil {
+            p++; goto _out
 
-            }
-             this.top--;  this.cs =  this.stack[ this.top]
+        }
+         this.top--;  this.cs =  this.stack[ this.top]
 goto _again
 
-        
+    
 //line cte.go:2809
 		}
 	}
@@ -2993,7 +2993,7 @@ _again:
 	_out: {}
 	}
 
-//line cte.rl:625
+//line cte.rl:612
 
 
     if this.ts > 0 {

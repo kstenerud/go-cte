@@ -374,79 +374,75 @@ type CteDecoderCallbacks interface {
     value = object_pre (keyable | nonkeyable);
     kv_pair = object_pre keyable object_post '=' value;
 
-    comment_iterate :=
-        [^\n]*
-        '\n' @{
-            err = callbacks.OnArrayData(this.data[this.arrayStart:fpc])
-            if err != nil {
-                fbreak;
-            }
+    comment_iterate := [^\n]* '\n' @{
+        err = callbacks.OnArrayData(this.data[this.arrayStart:fpc])
+        if err != nil {
+            fbreak;
+        }
+        err = callbacks.OnArrayEnd()
+        if err != nil {
+            fbreak;
+        }
+        fret;
+    };
+
+    multiline_comment_iterate := any* multiline_comment? "*/" @{
+        err = callbacks.OnArrayData(this.data[this.arrayStart:fpc-1])
+        if err != nil {
+            fbreak;
+        }
+        this.arrayStart = fpc-1
+        this.commentDepth--
+        if this.commentDepth == 0 {
             err = callbacks.OnArrayEnd()
             if err != nil {
                 fbreak;
             }
-            fret;
-        };
+        }
+        fret;
+    };
 
-    multiline_comment_iterate :=
-        any* multiline_comment? "*/" @{
-            err = callbacks.OnArrayData(this.data[this.arrayStart:fpc-1])
-            if err != nil {
-                fbreak;
-            }
-            this.arrayStart = fpc-1
-            this.commentDepth--
-            if this.commentDepth == 0 {
-                err = callbacks.OnArrayEnd()
+    string_sequence =  (any - ('"' | '\\') ) |
+    ('\\'
+        (
+            ('\\' @{
+                err = this.flushAndAddEscapedCharacter(fpc-1, '\\', callbacks)
                 if err != nil {
                     fbreak;
                 }
-            }
-            fret;
-        };
-
-    string_iterate :=
-        (
-            (any - ('"' | '\\') ) |
-            ('\\' (
-                ('\\' @{
-                    err = this.flushAndAddEscapedCharacter(fpc-1, '\\', callbacks)
-                    if err != nil {
-                        fbreak;
-                    }
-                }) |
-                ('n' @{
-                    err = this.flushAndAddEscapedCharacter(fpc-1, '\n', callbacks)
-                    if err != nil {
-                        fbreak;
-                    }
-                }) |
-                ('r' @{
-                    err = this.flushAndAddEscapedCharacter(fpc-1, '\r', callbacks)
-                    if err != nil {
-                        fbreak;
-                    }
-                }) |
-                ('t' @{
-                    err = this.flushAndAddEscapedCharacter(fpc-1, '\t', callbacks)
-                    if err != nil {
-                        fbreak;
-                    }
-                }) |
-                ('"' @{
-                    err = this.flushAndAddEscapedCharacter(fpc-1, '"', callbacks)
-                    if err != nil {
-                        fbreak;
-                    }
-                }) |
-                ([^"nrt\\] @{
-                    return false, fmt.Errorf("\\%c: Illegal escape encoding", this.data[fpc])
-                })
-                # TODO: hex and unicode
-            )
+            }) |
+            ('n' @{
+                err = this.flushAndAddEscapedCharacter(fpc-1, '\n', callbacks)
+                if err != nil {
+                    fbreak;
+                }
+            }) |
+            ('r' @{
+                err = this.flushAndAddEscapedCharacter(fpc-1, '\r', callbacks)
+                if err != nil {
+                    fbreak;
+                }
+            }) |
+            ('t' @{
+                err = this.flushAndAddEscapedCharacter(fpc-1, '\t', callbacks)
+                if err != nil {
+                    fbreak;
+                }
+            }) |
+            ('"' @{
+                err = this.flushAndAddEscapedCharacter(fpc-1, '"', callbacks)
+                if err != nil {
+                    fbreak;
+                }
+            }) |
+            ([^"nrt\\] @{
+                return false, fmt.Errorf("\\%c: Illegal escape encoding", this.data[fpc])
+            })
+            # TODO: hex and unicode
         )
-    )*
-    '"' @{
+    );
+
+    string_iterate := string_sequence* '"' @{
         err = callbacks.OnArrayData(this.data[this.arrayStart:fpc])
         if err != nil {
             fbreak;
@@ -459,16 +455,16 @@ type CteDecoderCallbacks interface {
     };
 
     uri_iterate := [ !#-~]+ '"' @{
-            err = callbacks.OnArrayData(this.data[this.arrayStart:fpc])
-            if err != nil {
-                fbreak;
-            }
-            err = callbacks.OnArrayEnd()
-            if err != nil {
-                fbreak;
-            }
-            fret;
-        };
+        err = callbacks.OnArrayData(this.data[this.arrayStart:fpc])
+        if err != nil {
+            fbreak;
+        }
+        err = callbacks.OnArrayEnd()
+        if err != nil {
+            fbreak;
+        }
+        fret;
+    };
 
     hex_numeric_hi = [0-9] @{
         this.binaryNext = (fc - '0') << 4
@@ -482,62 +478,53 @@ type CteDecoderCallbacks interface {
     hex_af_lo = [a-f] @{
         this.binaryNext |= fc - 'a' + 10
     };
-
     binary_hex_sequence = ws* (hex_numeric_hi | hex_af_hi) ws* (hex_numeric_lo | hex_af_lo) @{
         this.binaryData = append(this.binaryData, this.binaryNext)
     };
 
     binary_hex_iterate := binary_hex_sequence* '"' @{
-            err = callbacks.OnArrayData(this.binaryData)
-            if err != nil {
-                fbreak;
-            }
-            err = callbacks.OnArrayEnd()
-            if err != nil {
-                fbreak;
-            }
-            fret;
-        };
+        err = callbacks.OnArrayData(this.binaryData)
+        if err != nil {
+            fbreak;
+        }
+        err = callbacks.OnArrayEnd()
+        if err != nil {
+            fbreak;
+        }
+        fret;
+    };
 
-    list_iterate :=
-        ( value (ws value)* )?
-        ws* ']' @{
-            err = callbacks.OnContainerEnd()
-            if err != nil {
-                fbreak;
-            }
-            fret;
-        };
+    list_iterate := ( value (ws value)* )? ws* ']' @{
+        err = callbacks.OnContainerEnd()
+        if err != nil {
+            fbreak;
+        }
+        fret;
+    };
 
-    unordered_map_iterate :=
-        ( kv_pair (ws kv_pair)* )?
-        ws* '}' @{
-            err = callbacks.OnContainerEnd()
-            if err != nil {
-                fbreak;
-            }
-            fret;
-        };
+    unordered_map_iterate := ( kv_pair (ws kv_pair)* )? ws* '}' @{
+        err = callbacks.OnContainerEnd()
+        if err != nil {
+            fbreak;
+        }
+        fret;
+    };
 
-    ordered_map_iterate :=
-        ( kv_pair (ws kv_pair)* )?
-        ws* '>' @{
-            err = callbacks.OnContainerEnd()
-            if err != nil {
-                fbreak;
-            }
-            fret;
-        };
+    ordered_map_iterate := ( kv_pair (ws kv_pair)* )? ws* '>' @{
+        err = callbacks.OnContainerEnd()
+        if err != nil {
+            fbreak;
+        }
+        fret;
+    };
 
-    metadata_map_iterate :=
-        ( kv_pair (ws kv_pair)* )?
-        ws* ')' @{
-            err = callbacks.OnContainerEnd()
-            if err != nil {
-                fbreak;
-            }
-            fret;
-        };
+    metadata_map_iterate := ( kv_pair (ws kv_pair)* )? ws* ')' @{
+        err = callbacks.OnContainerEnd()
+        if err != nil {
+            fbreak;
+        }
+        fret;
+    };
 
     main := value ws* @/{
         err = fmt.Errorf("Incomplete document")
