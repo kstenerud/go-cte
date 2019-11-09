@@ -142,8 +142,9 @@ type CteDecoderCallbacks interface {
     };
 
     float_hex = integer_hex '.' fractional_digit_hex+ exponent_hex %{
-        exponent := float64((this.exponent * this.exponentSign + this.exponentAdjust))
-        err = callbacks.OnFloat(float64(this.significandSign) * float64(this.significand) * math.Pow(2.0, exponent))
+        err = callbacks.OnFloat(float64(this.significandSign) *
+                    float64(this.significand) *
+                    math.Pow(2.0, float64((this.exponent * this.exponentSign + this.exponentAdjust))))
         this.significandSign = 1
         this.significand = 0
         this.exponentAdjust = 0
@@ -211,8 +212,7 @@ type CteDecoderCallbacks interface {
     time_tz_portion = hour ':' minute ':' second ('.' subsecond)? ('/' timezone)?;
 
     date = date_portion %{
-        year := int(this.significand) * this.significandSign
-        err = callbacks.OnDate(year, this.month, this.day)
+        err = callbacks.OnDate(int(this.significand) * this.significandSign, this.month, this.day)
         this.significandSign = 1
         this.significand = 0
         this.month = 0
@@ -223,8 +223,11 @@ type CteDecoderCallbacks interface {
     };
 
     time = time_tz_portion %{
-        nanosecond := this.subsecond * this.subsecondMultiplier
-        err = callbacks.OnTimeTZ(this.hour, this.minute, this.second, nanosecond, string(this.timezone))
+        err = callbacks.OnTimeTZ(this.hour,
+                this.minute,
+                this.second,
+                this.subsecond * this.subsecondMultiplier,
+                string(this.timezone))
         this.hour = 0
         this.minute = 0
         this.second = 0
@@ -237,9 +240,14 @@ type CteDecoderCallbacks interface {
     };
 
     timestamp = date_portion '/' time_tz_portion %{
-        year := int(this.significand) * this.significandSign
-        nanosecond := this.subsecond * this.subsecondMultiplier
-        err = callbacks.OnTimestampTZ(year, this.month, this.day, this.hour, this.minute, this.second, nanosecond, string(this.timezone))
+        err = callbacks.OnTimestampTZ(int(this.significand) * this.significandSign,
+                this.month,
+                this.day,
+                this.hour,
+                this.minute,
+                this.second,
+                this.subsecond * this.subsecondMultiplier,
+                string(this.timezone))
         this.significandSign = 1
         this.significand = 0
         this.month = 0
@@ -500,7 +508,7 @@ type CteDecoderCallbacks interface {
 }%%
 
 
-%% write data nofinal;
+%% write data;
 
 type Parser struct {
     cs int // Current Ragel state
