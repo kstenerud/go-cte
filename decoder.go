@@ -1,5 +1,5 @@
 
-//line cte.rl:1
+//line decoder.rl:1
 package cte
 
 import (
@@ -33,12 +33,12 @@ type CteDecoderCallbacks interface {
 }
 
 
-//line cte.rl:597
+//line decoder.rl:597
 
 
 
 
-//line cte.go:42
+//line decoder.go:42
 var _cte_actions []byte = []byte{
 	0, 1, 0, 1, 1, 1, 2, 1, 3, 
 	1, 4, 1, 5, 1, 6, 1, 7, 
@@ -2096,7 +2096,7 @@ const cte_en_metadata_map_iterate int = 579
 const cte_en_main int = 1
 
 
-//line cte.rl:601
+//line decoder.rl:601
 
 type Parser struct {
     cs int // Current Ragel state
@@ -2173,13 +2173,13 @@ func (this *Parser) Parse(src []byte, callbacks CteDecoderCallbacks) (isComplete
     _ = eof
     
     
-//line cte.go:2177
+//line decoder.go:2177
 	{
 	 this.cs = cte_start
 	 this.top = 0
 	}
 
-//line cte.go:2183
+//line decoder.go:2183
 	{
 	var _klen int
 	var _trans int
@@ -2259,7 +2259,7 @@ _match:
 		_acts++
 		switch _cte_actions[_acts-1] {
 		case 0:
-//line cte.rl:46
+//line decoder.rl:46
 
         err = callbacks.OnNil()
         if err != nil {
@@ -2268,7 +2268,7 @@ _match:
         }
     
 		case 1:
-//line cte.rl:53
+//line decoder.rl:53
 
         err = callbacks.OnBool(true)
         if err != nil {
@@ -2277,7 +2277,7 @@ _match:
         }
     
 		case 2:
-//line cte.rl:60
+//line decoder.rl:60
 
         err = callbacks.OnBool(false)
         if err != nil {
@@ -2286,65 +2286,65 @@ _match:
         }
     
 		case 3:
-//line cte.rl:69
+//line decoder.rl:69
 
         this.significandSign = -1
     
 		case 4:
-//line cte.rl:73
+//line decoder.rl:73
 
         this.exponentSign = -1
     
 		case 5:
-//line cte.rl:77
+//line decoder.rl:77
 
         this.significand = this.significand * 10 + uint64( this.data[p] - '0')
     
 		case 6:
-//line cte.rl:81
+//line decoder.rl:81
 
         this.significand = (this.significand << 4) | uint64( this.data[p] - '0')
     
 		case 7:
-//line cte.rl:83
+//line decoder.rl:83
 
         this.significand = (this.significand << 4) | uint64( this.data[p] - 'a' + 10)
     
 		case 8:
-//line cte.rl:87
+//line decoder.rl:87
 
         this.significand = this.significand * 10 + uint64( this.data[p] - '0')
         this.exponentAdjust--
     
 		case 9:
-//line cte.rl:92
+//line decoder.rl:92
 
         this.significand = (this.significand << 4) | uint64( this.data[p] - '0')
         this.exponentAdjust -= 4
     
 		case 10:
-//line cte.rl:95
+//line decoder.rl:95
 
         this.significand = (this.significand << 4) | uint64( this.data[p] - 'a' + 10)
         this.exponentAdjust -= 4
     
 		case 11:
-//line cte.rl:100
+//line decoder.rl:100
 
         this.exponent = this.exponent * 10 + int( this.data[p] - '0')
     
 		case 12:
-//line cte.rl:109
+//line decoder.rl:109
 
         this.significand = (this.significand << 1) | uint64( this.data[p] - '0')
     
 		case 13:
-//line cte.rl:113
+//line decoder.rl:113
 
         this.significand = (this.significand << 3) | uint64( this.data[p] - '0')
     
 		case 14:
-//line cte.rl:119
+//line decoder.rl:119
 
         if this.significandSign >= 0 {
             err = callbacks.OnPositiveInt(this.significand)
@@ -2359,7 +2359,7 @@ _match:
         }
     
 		case 15:
-//line cte.rl:132
+//line decoder.rl:132
 
         err = callbacks.OnDecimalFloat(int64(this.significand) * int64(this.significandSign), (this.exponent+this.exponentAdjust) * this.exponentSign)
         this.significandSign = 1
@@ -2373,7 +2373,7 @@ _match:
         }
     
 		case 16:
-//line cte.rl:144
+//line decoder.rl:144
 
         err = callbacks.OnFloat(float64(this.significandSign) *
                     float64(this.significand) *
@@ -2389,7 +2389,7 @@ _match:
         }
     
 		case 17:
-//line cte.rl:160
+//line decoder.rl:160
 
         err = callbacks.OnFloat(math.Inf(this.significandSign))
         this.significandSign = 1
@@ -2399,7 +2399,7 @@ _match:
         }
     
 		case 18:
-//line cte.rl:168
+//line decoder.rl:168
 
         err = callbacks.OnFloat(math.NaN())
         if err != nil {
@@ -2408,7 +2408,7 @@ _match:
         }
     
 		case 19:
-//line cte.rl:174
+//line decoder.rl:174
 
         // Just map it to regular NaN
         err = callbacks.OnFloat(math.NaN())
@@ -2418,43 +2418,43 @@ _match:
         }
     
 		case 20:
-//line cte.rl:182
+//line decoder.rl:182
 
         this.month = this.month * 10 + int( this.data[p] - '0')
     
 		case 21:
-//line cte.rl:186
+//line decoder.rl:186
 
         this.day = this.day * 10 + int( this.data[p] - '0')
     
 		case 22:
-//line cte.rl:190
+//line decoder.rl:190
 
         this.hour = this.hour * 10 + int( this.data[p] - '0')
     
 		case 23:
-//line cte.rl:194
+//line decoder.rl:194
 
         this.minute = this.minute * 10 + int( this.data[p] - '0')
     
 		case 24:
-//line cte.rl:198
+//line decoder.rl:198
 
         this.second = this.second * 10 + int( this.data[p] - '0')
     
 		case 25:
-//line cte.rl:202
+//line decoder.rl:202
 
         this.subsecond = this.subsecond * 10 + int( this.data[p] - '0')
         this.subsecondMultiplier /= 10
     
 		case 26:
-//line cte.rl:207
+//line decoder.rl:207
 
         this.timezone = append(this.timezone,  this.data[p])
     
 		case 27:
-//line cte.rl:214
+//line decoder.rl:214
 
         err = callbacks.OnDate(int(this.significand) * this.significandSign, this.month, this.day)
         this.significandSign = 1
@@ -2467,7 +2467,7 @@ _match:
         }
     
 		case 28:
-//line cte.rl:225
+//line decoder.rl:225
 
         err = callbacks.OnTimeTZ(this.hour,
                 this.minute,
@@ -2486,7 +2486,7 @@ _match:
         }
     
 		case 29:
-//line cte.rl:242
+//line decoder.rl:242
 
         err = callbacks.OnTimestampTZ(int(this.significand) * this.significandSign,
                 this.month,
@@ -2512,7 +2512,7 @@ _match:
         }
     
 		case 30:
-//line cte.rl:266
+//line decoder.rl:266
 
         err = callbacks.OnListBegin()
         if err != nil {
@@ -2523,7 +2523,7 @@ _match:
 
     
 		case 31:
-//line cte.rl:274
+//line decoder.rl:274
 
         err = callbacks.OnUnorderedMapBegin()
         if err != nil {
@@ -2534,7 +2534,7 @@ _match:
 
     
 		case 32:
-//line cte.rl:282
+//line decoder.rl:282
 
         err = callbacks.OnOrderedMapBegin()
         if err != nil {
@@ -2545,7 +2545,7 @@ _match:
 
     
 		case 33:
-//line cte.rl:290
+//line decoder.rl:290
 
         err = callbacks.OnMetadataMapBegin()
         if err != nil {
@@ -2556,7 +2556,7 @@ _match:
 
     
 		case 34:
-//line cte.rl:298
+//line decoder.rl:298
 
         this.arrayStart = p + 1
         err = callbacks.OnCommentBegin()
@@ -2568,7 +2568,7 @@ _match:
 
     
 		case 35:
-//line cte.rl:307
+//line decoder.rl:307
 
         if this.commentDepth == 0 {
             err = callbacks.OnCommentBegin()
@@ -2585,7 +2585,7 @@ _match:
 
     
 		case 36:
-//line cte.rl:321
+//line decoder.rl:321
 
         this.arrayStart = p + 1
         err = callbacks.OnStringBegin()
@@ -2597,12 +2597,12 @@ _match:
 
     
 		case 37:
-//line cte.rl:330
+//line decoder.rl:330
 
         this.arrayStart = p - 1
     
 		case 38:
-//line cte.rl:332
+//line decoder.rl:332
 
         if this.data[p-1] != '"' {
             err = callbacks.OnStringBegin()
@@ -2626,7 +2626,7 @@ _match:
         }
     
 		case 39:
-//line cte.rl:352
+//line decoder.rl:352
 
         this.arrayStart = p + 1
         err = callbacks.OnURIBegin()
@@ -2638,7 +2638,7 @@ _match:
 
     
 		case 40:
-//line cte.rl:361
+//line decoder.rl:361
 
         err = callbacks.OnBytesBegin()
         if err != nil {
@@ -2649,7 +2649,7 @@ _match:
 
     
 		case 41:
-//line cte.rl:369
+//line decoder.rl:369
 
         err = callbacks.OnBytesBegin()
         if err != nil {
@@ -2660,7 +2660,7 @@ _match:
 
     
 		case 42:
-//line cte.rl:385
+//line decoder.rl:385
 
         err = callbacks.OnArrayData(this.data[this.arrayStart:p])
         if err != nil {
@@ -2677,7 +2677,7 @@ goto _again
 
     
 		case 43:
-//line cte.rl:397
+//line decoder.rl:397
 
         err = callbacks.OnArrayData(this.data[this.arrayStart:p-1])
         if err != nil {
@@ -2698,7 +2698,7 @@ goto _again
 
     
 		case 44:
-//line cte.rl:416
+//line decoder.rl:416
 
                 err = this.flushAndAddEscapedCharacter(p-1, '\\', callbacks)
                 if err != nil {
@@ -2707,7 +2707,7 @@ goto _again
                 }
             
 		case 45:
-//line cte.rl:422
+//line decoder.rl:422
 
                 err = this.flushAndAddEscapedCharacter(p-1, '\n', callbacks)
                 if err != nil {
@@ -2716,7 +2716,7 @@ goto _again
                 }
             
 		case 46:
-//line cte.rl:428
+//line decoder.rl:428
 
                 err = this.flushAndAddEscapedCharacter(p-1, '\r', callbacks)
                 if err != nil {
@@ -2725,7 +2725,7 @@ goto _again
                 }
             
 		case 47:
-//line cte.rl:434
+//line decoder.rl:434
 
                 err = this.flushAndAddEscapedCharacter(p-1, '\t', callbacks)
                 if err != nil {
@@ -2734,7 +2734,7 @@ goto _again
                 }
             
 		case 48:
-//line cte.rl:440
+//line decoder.rl:440
 
                 err = this.flushAndAddEscapedCharacter(p-1, '"', callbacks)
                 if err != nil {
@@ -2743,12 +2743,12 @@ goto _again
                 }
             
 		case 49:
-//line cte.rl:446
+//line decoder.rl:446
 
                 return false, fmt.Errorf("\\%c: Illegal escape encoding", this.data[p])
             
 		case 50:
-//line cte.rl:453
+//line decoder.rl:453
 
         err = callbacks.OnArrayData(this.data[this.arrayStart:p])
         if err != nil {
@@ -2765,7 +2765,7 @@ goto _again
 
     
 		case 51:
-//line cte.rl:465
+//line decoder.rl:465
 
         err = callbacks.OnArrayData(this.data[this.arrayStart:p])
         if err != nil {
@@ -2782,32 +2782,32 @@ goto _again
 
     
 		case 52:
-//line cte.rl:477
+//line decoder.rl:477
 
         this.binaryNext = ( this.data[p] - '0') << 4
     
 		case 53:
-//line cte.rl:480
+//line decoder.rl:480
 
         this.binaryNext = ( this.data[p] - 'a' + 10) << 4
     
 		case 54:
-//line cte.rl:483
+//line decoder.rl:483
 
         this.binaryNext |=  this.data[p] - '0'
     
 		case 55:
-//line cte.rl:486
+//line decoder.rl:486
 
         this.binaryNext |=  this.data[p] - 'a' + 10
     
 		case 56:
-//line cte.rl:489
+//line decoder.rl:489
 
         this.binaryData = append(this.binaryData, this.binaryNext)
     
 		case 57:
-//line cte.rl:493
+//line decoder.rl:493
 
         err = callbacks.OnArrayData(this.binaryData)
         if err != nil {
@@ -2825,32 +2825,32 @@ goto _again
 
     
 		case 58:
-//line cte.rl:506
+//line decoder.rl:506
 
         this.binaryAccumulator = (this.binaryAccumulator << 6) | uint( this.data[p] - 'A')
     
 		case 59:
-//line cte.rl:509
+//line decoder.rl:509
 
         this.binaryAccumulator = (this.binaryAccumulator << 6) | uint( this.data[p] - 'a' + 26)
     
 		case 60:
-//line cte.rl:512
+//line decoder.rl:512
 
         this.binaryAccumulator = (this.binaryAccumulator << 6) | uint( this.data[p] - '0' + 52)
     
 		case 61:
-//line cte.rl:515
+//line decoder.rl:515
 
         this.binaryAccumulator = (this.binaryAccumulator << 6) | 62
     
 		case 62:
-//line cte.rl:518
+//line decoder.rl:518
 
         this.binaryAccumulator = (this.binaryAccumulator << 6) | 63
     
 		case 63:
-//line cte.rl:522
+//line decoder.rl:522
 
         this.base64Digits++
         if this.base64Digits == 4 {
@@ -2862,7 +2862,7 @@ goto _again
         }
     
 		case 64:
-//line cte.rl:533
+//line decoder.rl:533
 
         switch this.base64Digits {
             case 0:
@@ -2879,7 +2879,7 @@ goto _again
         this.base64Digits = 0
     
 		case 65:
-//line cte.rl:549
+//line decoder.rl:549
 
         err = callbacks.OnArrayData(this.binaryData)
         if err != nil {
@@ -2897,7 +2897,7 @@ goto _again
 
     
 		case 66:
-//line cte.rl:562
+//line decoder.rl:562
 
         err = callbacks.OnContainerEnd()
         if err != nil {
@@ -2909,7 +2909,7 @@ goto _again
 
     
 		case 67:
-//line cte.rl:570
+//line decoder.rl:570
 
         err = callbacks.OnContainerEnd()
         if err != nil {
@@ -2921,7 +2921,7 @@ goto _again
 
     
 		case 68:
-//line cte.rl:578
+//line decoder.rl:578
 
         err = callbacks.OnContainerEnd()
         if err != nil {
@@ -2933,7 +2933,7 @@ goto _again
 
     
 		case 69:
-//line cte.rl:586
+//line decoder.rl:586
 
         err = callbacks.OnContainerEnd()
         if err != nil {
@@ -2944,7 +2944,7 @@ goto _again
 goto _again
 
     
-//line cte.go:2948
+//line decoder.go:2948
 		}
 	}
 
@@ -2964,7 +2964,7 @@ _again:
 			__acts++
 			switch _cte_actions[__acts-1] {
 			case 14:
-//line cte.rl:119
+//line decoder.rl:119
 
         if this.significandSign >= 0 {
             err = callbacks.OnPositiveInt(this.significand)
@@ -2979,7 +2979,7 @@ _again:
         }
     
 			case 15:
-//line cte.rl:132
+//line decoder.rl:132
 
         err = callbacks.OnDecimalFloat(int64(this.significand) * int64(this.significandSign), (this.exponent+this.exponentAdjust) * this.exponentSign)
         this.significandSign = 1
@@ -2993,7 +2993,7 @@ _again:
         }
     
 			case 16:
-//line cte.rl:144
+//line decoder.rl:144
 
         err = callbacks.OnFloat(float64(this.significandSign) *
                     float64(this.significand) *
@@ -3009,7 +3009,7 @@ _again:
         }
     
 			case 17:
-//line cte.rl:160
+//line decoder.rl:160
 
         err = callbacks.OnFloat(math.Inf(this.significandSign))
         this.significandSign = 1
@@ -3019,7 +3019,7 @@ _again:
         }
     
 			case 18:
-//line cte.rl:168
+//line decoder.rl:168
 
         err = callbacks.OnFloat(math.NaN())
         if err != nil {
@@ -3028,7 +3028,7 @@ _again:
         }
     
 			case 19:
-//line cte.rl:174
+//line decoder.rl:174
 
         // Just map it to regular NaN
         err = callbacks.OnFloat(math.NaN())
@@ -3038,7 +3038,7 @@ _again:
         }
     
 			case 27:
-//line cte.rl:214
+//line decoder.rl:214
 
         err = callbacks.OnDate(int(this.significand) * this.significandSign, this.month, this.day)
         this.significandSign = 1
@@ -3051,7 +3051,7 @@ _again:
         }
     
 			case 28:
-//line cte.rl:225
+//line decoder.rl:225
 
         err = callbacks.OnTimeTZ(this.hour,
                 this.minute,
@@ -3070,7 +3070,7 @@ _again:
         }
     
 			case 29:
-//line cte.rl:242
+//line decoder.rl:242
 
         err = callbacks.OnTimestampTZ(int(this.significand) * this.significandSign,
                 this.month,
@@ -3096,12 +3096,12 @@ _again:
         }
     
 			case 37:
-//line cte.rl:330
+//line decoder.rl:330
 
         this.arrayStart = p - 1
     
 			case 38:
-//line cte.rl:332
+//line decoder.rl:332
 
         if this.data[p-1] != '"' {
             err = callbacks.OnStringBegin()
@@ -3124,7 +3124,7 @@ _again:
             }
         }
     
-//line cte.go:3128
+//line decoder.go:3128
 			}
 		}
 	}
@@ -3132,7 +3132,7 @@ _again:
 	_out: {}
 	}
 
-//line cte.rl:679
+//line decoder.rl:679
 
 
     if this.ts > 0 {
