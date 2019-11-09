@@ -366,8 +366,16 @@ type CteDecoderCallbacks interface {
         fcall binary_hex_iterate;
     };
 
+    binary_base64 = 'b' '"' @{
+        err = callbacks.OnBytesBegin()
+        if err != nil {
+            fbreak;
+        }
+        fcall binary_base64_iterate;
+    };
 
-    keyable = true | false | integer | float | inf | string | unquoted_string | uri | binary_hex | date | time | timestamp;
+
+    keyable = true | false | integer | float | inf | string | unquoted_string | uri | binary_hex | binary_base64 | date | time | timestamp;
     nonkeyable = nil | list | unordered_map | ordered_map | nan | snan;
     object_pre = (ws | metadata_map | comment | multiline_comment)*;
     object_post = (ws | comment | multiline_comment)*;
@@ -466,19 +474,19 @@ type CteDecoderCallbacks interface {
         fret;
     };
 
-    hex_numeric_hi = [0-9] @{
+    hex_09_hi = [0-9] @{
         this.binaryNext = (fc - '0') << 4
     };
     hex_af_hi = [a-f] @{
         this.binaryNext = (fc - 'a' + 10) << 4
     };
-    hex_numeric_lo = [0-9] @{
+    hex_09_lo = [0-9] @{
         this.binaryNext |= fc - '0'
     };
     hex_af_lo = [a-f] @{
         this.binaryNext |= fc - 'a' + 10
     };
-    binary_hex_sequence = ws* (hex_numeric_hi | hex_af_hi) ws* (hex_numeric_lo | hex_af_lo) @{
+    binary_hex_sequence = ws* (hex_09_hi | hex_af_hi) ws* (hex_09_lo | hex_af_lo) @{
         this.binaryData = append(this.binaryData, this.binaryNext)
     };
 
@@ -487,6 +495,63 @@ type CteDecoderCallbacks interface {
         if err != nil {
             fbreak;
         }
+        this.binaryData = this.binaryData[:0]
+        err = callbacks.OnArrayEnd()
+        if err != nil {
+            fbreak;
+        }
+        fret;
+    };
+
+    base64_AZ = [A-Z] @{
+        this.binaryAccumulator = (this.binaryAccumulator << 6) | uint(fc - 'A')
+    };
+    base64_az = [a-z] @{
+        this.binaryAccumulator = (this.binaryAccumulator << 6) | uint(fc - 'a' + 26)
+    };
+    base64_09 = [0-9] @{
+        this.binaryAccumulator = (this.binaryAccumulator << 6) | uint(fc - '0' + 52)
+    };
+    base64_plus = '+' @{
+        this.binaryAccumulator = (this.binaryAccumulator << 6) | 62
+    };
+    base64_slash = '/' @{
+        this.binaryAccumulator = (this.binaryAccumulator << 6) | 63
+    };
+
+    base64_digit = ws* (base64_AZ | base64_az | base64_09 | base64_plus | base64_slash) @{
+        this.base64Digits++
+        if this.base64Digits == 4 {
+            this.binaryData = append(this.binaryData, byte(this.binaryAccumulator >> 16))
+            this.binaryData = append(this.binaryData, byte(this.binaryAccumulator >> 8))
+            this.binaryData = append(this.binaryData, byte(this.binaryAccumulator))
+            this.binaryAccumulator = 0
+            this.base64Digits = 0
+        }
+    };
+
+    base64_sequence = base64_digit* ws* '"' @{
+        switch this.base64Digits {
+            case 0:
+                break
+            case 1:
+                // TODO: Invalid
+            case 2:
+                this.binaryData = append(this.binaryData, byte(this.binaryAccumulator >> 4))
+            case 3:
+                this.binaryData = append(this.binaryData, byte(this.binaryAccumulator >> 10))
+                this.binaryData = append(this.binaryData, byte(this.binaryAccumulator >> 2))
+        }
+        this.binaryAccumulator = 0
+        this.base64Digits = 0
+    };
+
+    binary_base64_iterate := base64_sequence @{
+        err = callbacks.OnArrayData(this.binaryData)
+        if err != nil {
+            fbreak;
+        }
+        this.binaryData = this.binaryData[:0]
         err = callbacks.OnArrayEnd()
         if err != nil {
             fbreak;
@@ -544,6 +609,8 @@ type Parser struct {
     arrayStart int // Start of the current item of interest
     binaryData []byte
     binaryNext byte
+    binaryAccumulator uint
+    base64Digits int
     commentDepth int
     significand uint64
     significandSign int

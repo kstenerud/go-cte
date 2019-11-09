@@ -1,6 +1,7 @@
 package cte
 
 import (
+	"encoding/base64"
 	"math"
 	"net/url"
 
@@ -392,6 +393,12 @@ func assertDecoded(t *testing.T, encoded string, expected interface{}, tolerance
 	if !DeepEquivalence(actual, expected, tolerance) {
 		t.Errorf("Expected [%v], actual [%v]", expected, actual)
 	}
+}
+
+func assertBase64Decoded(t *testing.T, data []byte) {
+	asBase64 := base64.StdEncoding.WithPadding(base64.NoPadding).EncodeToString(data)
+	encoded := fmt.Sprintf("b\"%v\"", asBase64)
+	assertDecoded(t, encoded, data, 0)
 }
 
 func assertDecodeFails(t *testing.T, encoded string) {
