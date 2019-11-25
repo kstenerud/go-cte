@@ -37,11 +37,11 @@ type CteDecoderCallbacks interface {
 
     ws = [\r\n\t ];
 
-    utf8 = (0xc2..0xdf 0x80..0xbf) |
-           (0xe0..0xef 0x80..0xbf 0x80..0xbf) |
-           (0xf0..0xf4 0x80..0xbf 0x80..0xbf 0x80..0xbf);
+    utf8 = (0xc2..0xdf 0x80..0xbf) @{utfCharWidth = 2} |
+           (0xe0..0xef 0x80..0xbf 0x80..0xbf) @{utfCharWidth = 3} |
+           (0xf0..0xf4 0x80..0xbf 0x80..0xbf 0x80..0xbf) @{utfCharWidth = 4};
 
-    unquoted_safe_first_char = [A-Za-z_] | utf8;
+    unquoted_safe_first_char = ([A-Za-z_] @{utfCharWidth = 1}) | utf8;
     unquoted_safe = unquoted_safe_first_char | [0-9];
 
     nil = "@nil" @{
@@ -321,7 +321,7 @@ type CteDecoderCallbacks interface {
     };
 
     unquoted_string = unquoted_safe_first_char ('"' | unquoted_safe*) >{
-        this.arrayStart = fpc - 1
+        this.arrayStart = fpc - utfCharWidth
     } %{
         if this.data[fpc-1] != '"' {
             err = callbacks.OnStringBegin()
@@ -655,6 +655,7 @@ func (this *Parser) Parse(src []byte, callbacks CteDecoderCallbacks) (isComplete
     pe := len(this.data) // Position: end of buffer
     // TODO: Change to -1 and check for end of file
     eof := pe // Position: end of file
+    utfCharWidth := 0
 
     _ = eof
     

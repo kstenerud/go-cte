@@ -100,7 +100,7 @@ func TestUnquotedString(t *testing.T) {
 	assertDecoded(t, "abcd", "abcd")
 	assertDecoded(t, "_a_b_c_d_", "_a_b_c_d_")
 	assertDecoded(t, "number_8", "number_8")
-	// assertDecoded(t, "飲み物", "飲み物")
+	assertDecoded(t, "飲み物", "飲み物")
 }
 
 func TestURI(t *testing.T) {
