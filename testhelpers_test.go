@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"math"
 	"net/url"
+	"reflect"
 
 	// "bytes"
 	"fmt"
@@ -14,9 +15,11 @@ import (
 
 // General
 
-func floatEqual(a float64, b float64, tolerance float64) bool {
-	return math.Abs(a-b) < tolerance
-}
+type MetadataMap map[interface{}]interface{}
+type Comment string
+
+type Marker string
+type Reference string
 
 func asList(values ...interface{}) []interface{} {
 	return values
@@ -33,6 +36,73 @@ func asMap(values ...interface{}) map[interface{}]interface{} {
 		}
 	}
 	return result
+}
+
+func asMetadataMap(values ...interface{}) MetadataMap {
+	result := make(MetadataMap)
+	var key interface{}
+	for i, v := range values {
+		if i&1 == 0 {
+			key = v
+		} else {
+			result[key] = v
+		}
+	}
+	return result
+}
+
+func asComment(value string) Comment {
+	return Comment(value)
+}
+
+func asMarker(value string) Marker {
+	return Marker(value)
+}
+
+func asIntMarker(value int) Marker {
+	return Marker(string(value))
+}
+
+func asReference(value string) Reference {
+	return Reference(value)
+}
+
+func asIntReference(value int) Reference {
+	return Reference(string(value))
+}
+
+func asURL(str string) *url.URL {
+	url, err := url.Parse(str)
+	if err != nil {
+		url, err = url.Parse("http://parse.error")
+	}
+	return url
+}
+
+func asDate(year int, month int, day int) time.Time {
+	location := time.UTC
+	hour := 0
+	minute := 0
+	second := 0
+	nanosecond := 0
+	return time.Date(year, time.Month(month), day, hour, minute, second, nanosecond, location)
+}
+
+func asTime(hour int, minute int, second int, nanosecond int, timezone string) time.Time {
+	location, err := time.LoadLocation(timezone)
+	if err != nil {
+		panic(err)
+	}
+	baseTime := time.Now()
+	return time.Date(baseTime.Year(), baseTime.Month(), baseTime.Day(), hour, minute, second, nanosecond, location)
+}
+
+func asTimestamp(year int, month int, day int, hour int, minute int, second int, nanosecond int, timezone string) time.Time {
+	location, err := time.LoadLocation(timezone)
+	if err != nil {
+		panic(err)
+	}
+	return time.Date(year, time.Month(month), day, hour, minute, second, nanosecond, location)
 }
 
 var stringGeneratorChars = [...]byte{
@@ -102,12 +172,45 @@ const (
 )
 
 type testCallbacks struct {
-	nextValue        interface{}
-	containerStack   []interface{}
-	currentList      []interface{}
-	currentMap       map[interface{}]interface{}
-	currentArray     []byte
-	currentArrayType arrayType
+	nextValue          interface{}
+	containerStack     []interface{}
+	currentList        []interface{}
+	currentMap         map[interface{}]interface{}
+	currentMetadataMap MetadataMap
+	currentArray       []byte
+	currentArrayType   arrayType
+}
+
+func (this *testCallbacks) storeValue(value interface{}) {
+	if this.currentList != nil {
+		this.currentList = append(this.currentList, value)
+		return
+	}
+
+	if this.currentMap != nil {
+		if this.nextValue == nil {
+			this.nextValue = value
+		} else {
+			this.currentMap[this.nextValue] = value
+			this.nextValue = nil
+		}
+		return
+	}
+
+	if this.currentMetadataMap != nil {
+		if this.nextValue == nil {
+			this.nextValue = value
+		} else {
+			this.currentMetadataMap[this.nextValue] = value
+			this.nextValue = nil
+		}
+		return
+	}
+
+	if this.nextValue != nil {
+		panic(fmt.Errorf("Top level object already exists: %v", this.nextValue))
+	}
+	this.nextValue = value
 }
 
 func (this *testCallbacks) setCurrentContainer() {
@@ -125,10 +228,35 @@ func (this *testCallbacks) setCurrentContainer() {
 			this.currentMap = container.(map[interface{}]interface{})
 		case *map[interface{}]interface{}:
 			this.currentMap = *(container.(*map[interface{}]interface{}))
+		case MetadataMap:
+			this.currentMetadataMap = container.(MetadataMap)
 		default:
 			panic(fmt.Errorf("Unknown container type: %v", container))
 		}
 	}
+}
+
+func (this *testCallbacks) containerEnd() {
+	var item interface{}
+
+	if this.currentList != nil {
+		item = this.currentList
+		this.currentList = nil
+	} else if this.currentMap != nil {
+		item = this.currentMap
+		this.currentMap = nil
+	} else if this.currentMetadataMap != nil {
+		item = this.currentMetadataMap
+		this.currentMap = nil
+	} else {
+		panic("Ended unhandled container type")
+	}
+	length := len(this.containerStack)
+	if length > 0 {
+		this.containerStack = this.containerStack[:length-1]
+		this.setCurrentContainer()
+	}
+	this.storeValue(item)
 }
 
 func (this *testCallbacks) containerBegin(container interface{}) {
@@ -144,22 +272,8 @@ func (this *testCallbacks) mapBegin() {
 	this.containerBegin(make(map[interface{}]interface{}))
 }
 
-func (this *testCallbacks) containerEnd() {
-	var item interface{}
-
-	if this.currentList != nil {
-		item = this.currentList
-		this.currentList = nil
-	} else {
-		item = this.currentMap
-		this.currentMap = nil
-	}
-	length := len(this.containerStack)
-	if length > 0 {
-		this.containerStack = this.containerStack[:length-1]
-		this.setCurrentContainer()
-	}
-	this.storeValue(item)
+func (this *testCallbacks) metadataMapBegin() {
+	this.containerBegin(make(MetadataMap))
 }
 
 func (this *testCallbacks) arrayBegin(newArrayType arrayType) {
@@ -186,28 +300,6 @@ func (this *testCallbacks) arrayEnd() error {
 		this.storeValue(string(array))
 	}
 	return nil
-}
-
-func (this *testCallbacks) storeValue(value interface{}) {
-	if this.currentList != nil {
-		this.currentList = append(this.currentList, value)
-		return
-	}
-
-	if this.currentMap != nil {
-		if this.nextValue == nil {
-			this.nextValue = value
-		} else {
-			this.currentMap[this.nextValue] = value
-			this.nextValue = nil
-		}
-		return
-	}
-
-	if this.nextValue != nil {
-		panic(fmt.Errorf("Top level object already exists: %v", this.nextValue))
-	}
-	this.nextValue = value
 }
 
 func (this *testCallbacks) getValue() interface{} {
@@ -248,17 +340,12 @@ func (this *testCallbacks) OnDecimalFloat(significand int64, exponent int) error
 }
 
 func (this *testCallbacks) OnDate(year, month, day int) error {
-	this.storeValue(time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC))
+	this.storeValue(asDate(year, month, day))
 	return nil
 }
 
 func (this *testCallbacks) OnTimeTZ(hour, minute, second, nanosecond int, tz string) error {
-	loc, err := time.LoadLocation(tz)
-	if err != nil {
-		return err
-	}
-	baseDate := time.Now()
-	this.storeValue(time.Date(baseDate.Year(), baseDate.Month(), baseDate.Day(), hour, minute, second, nanosecond, loc))
+	this.storeValue(asTime(hour, minute, second, nanosecond, tz))
 	return nil
 }
 
@@ -271,11 +358,7 @@ func (this *testCallbacks) OnTimeLoc(hour, minute, second, nanosecond int, latit
 }
 
 func (this *testCallbacks) OnTimestampTZ(year, month, day, hour, minute, second, nanosecond int, tz string) error {
-	loc, err := time.LoadLocation(tz)
-	if err != nil {
-		return err
-	}
-	this.storeValue(time.Date(year, time.Month(month), day, hour, minute, second, nanosecond, loc))
+	this.storeValue(asTimestamp(year, month, day, hour, minute, second, nanosecond, tz))
 	return nil
 }
 
@@ -286,28 +369,18 @@ func (this *testCallbacks) OnTimestampLoc(year, month, day, hour, minute, second
 	return nil
 }
 
-func (this *testCallbacks) OnTimestamp(value time.Time) error {
-	this.storeValue(value)
-	return nil
-}
-
 func (this *testCallbacks) OnListBegin() error {
 	this.listBegin()
 	return nil
 }
 
-func (this *testCallbacks) OnOrderedMapBegin() error {
-	this.mapBegin()
-	return nil
-}
-
-func (this *testCallbacks) OnUnorderedMapBegin() error {
+func (this *testCallbacks) OnMapBegin() error {
 	this.mapBegin()
 	return nil
 }
 
 func (this *testCallbacks) OnMetadataMapBegin() error {
-	this.mapBegin()
+	this.metadataMapBegin()
 	return nil
 }
 
@@ -343,6 +416,16 @@ func (this *testCallbacks) OnArrayData(bytes []byte) error {
 
 func (this *testCallbacks) OnArrayEnd() error {
 	return this.arrayEnd()
+}
+
+func (this *testCallbacks) OnMarker(id string) error {
+	this.storeValue(asMarker(id))
+	return nil
+}
+
+func (this *testCallbacks) OnReference(id string) error {
+	this.storeValue(asReference(id))
+	return nil
 }
 
 func decodeDocument(maxDepth int, encoded []byte) (result interface{}, err error) {
@@ -384,21 +467,21 @@ func tryDecode(maxDepth int, encoded []byte) error {
 	return err
 }
 
-func assertDecoded(t *testing.T, encoded string, expected interface{}, tolerance float64) {
+func assertDecoded(t *testing.T, encoded string, expected interface{}) {
 	actual, err := decodeDocument(100, []byte(encoded))
 	if err != nil {
 		t.Errorf("Error: %v", err)
 		return
 	}
-	if !DeepEquivalence(actual, expected, tolerance) {
-		t.Errorf("Expected [%v], actual [%v]", expected, actual)
+	if !DeepEquivalence(actual, expected) {
+		t.Errorf("Expected type <%v>, value <%v>, actual type <%v>, value <%v>", reflect.TypeOf(expected), expected, reflect.TypeOf(actual), actual)
 	}
 }
 
 func assertBase64Decoded(t *testing.T, data []byte) {
 	asBase64 := base64.StdEncoding.WithPadding(base64.NoPadding).EncodeToString(data)
 	encoded := fmt.Sprintf("b\"%v\"", asBase64)
-	assertDecoded(t, encoded, data, 0)
+	assertDecoded(t, encoded, data)
 }
 
 func assertDecodeFails(t *testing.T, encoded string) {
@@ -508,38 +591,4 @@ func ShortCircuit(errors ...error) error {
 		}
 	}
 	return nil
-}
-
-func newURL(str string) *url.URL {
-	url, err := url.Parse(str)
-	if err != nil {
-		url, err = url.Parse("http://parse.error")
-	}
-	return url
-}
-
-func newDate(year int, month int, day int) time.Time {
-	location := time.UTC
-	hour := 0
-	minute := 0
-	second := 0
-	nanosecond := 0
-	return time.Date(year, time.Month(month), day, hour, minute, second, nanosecond, location)
-}
-
-func newTimeTZ(hour int, minute int, second int, nanosecond int, timezone string) time.Time {
-	location, err := time.LoadLocation(timezone)
-	if err != nil {
-		panic(err)
-	}
-	baseTime := time.Now()
-	return time.Date(baseTime.Year(), baseTime.Month(), baseTime.Day(), hour, minute, second, nanosecond, location)
-}
-
-func newTimestampTZ(year int, month int, day int, hour int, minute int, second int, nanosecond int, timezone string) time.Time {
-	location, err := time.LoadLocation(timezone)
-	if err != nil {
-		panic(err)
-	}
-	return time.Date(year, time.Month(month), day, hour, minute, second, nanosecond, location)
 }

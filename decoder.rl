@@ -18,8 +18,7 @@ type CteDecoderCallbacks interface {
     OnTimestampTZ(year, month, day, hour, minute, second, nanosecond int, tz string) error
     OnTimestampLoc(year, month, day, hour, minute, second, nanosecond int, latitude, longitude float32) error
     OnListBegin() error
-    OnOrderedMapBegin() error
-    OnUnorderedMapBegin() error
+    OnMapBegin() error
     OnMetadataMapBegin() error
     OnContainerEnd() error
     OnBytesBegin() error
@@ -28,6 +27,8 @@ type CteDecoderCallbacks interface {
     OnCommentBegin() error
     OnArrayData(bytes []byte) error
     OnArrayEnd() error
+    OnMarker(id string) error
+    OnReference(id string) error
 }
 
 %%{
@@ -271,20 +272,12 @@ type CteDecoderCallbacks interface {
         fcall list_iterate;
     };
 
-    unordered_map = '{' @{
-        err = callbacks.OnUnorderedMapBegin()
+    map = '{' @{
+        err = callbacks.OnMapBegin()
         if err != nil {
             fbreak;
         }
-        fcall unordered_map_iterate;
-    };
-
-    ordered_map = '<' @{
-        err = callbacks.OnOrderedMapBegin()
-        if err != nil {
-            fbreak;
-        }
-        fcall ordered_map_iterate;
+        fcall map_iterate;
     };
 
     metadata_map = '(' @{
@@ -376,7 +369,7 @@ type CteDecoderCallbacks interface {
 
 
     keyable = true | false | integer | float | inf | string | unquoted_string | uri | binary_hex | binary_base64 | date | time | timestamp;
-    nonkeyable = nil | list | unordered_map | ordered_map | nan | snan;
+    nonkeyable = nil | list | map | nan | snan;
     object_pre = (ws | metadata_map | comment | multiline_comment)*;
     object_post = (ws | comment | multiline_comment)*;
     value = object_pre (keyable | nonkeyable);
@@ -567,15 +560,7 @@ type CteDecoderCallbacks interface {
         fret;
     };
 
-    unordered_map_iterate := ( kv_pair (ws kv_pair)* )? ws* '}' @{
-        err = callbacks.OnContainerEnd()
-        if err != nil {
-            fbreak;
-        }
-        fret;
-    };
-
-    ordered_map_iterate := ( kv_pair (ws kv_pair)* )? ws* '>' @{
+    map_iterate := ( kv_pair (ws kv_pair)* )? ws* '}' @{
         err = callbacks.OnContainerEnd()
         if err != nil {
             fbreak;
