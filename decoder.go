@@ -42,7 +42,7 @@ type CteDecoderCallbacks interface {
 }
 
 
-//line decoder.rl:590
+//line decoder.rl:549
 
 
 
@@ -1673,7 +1673,7 @@ const cte_en_metadata_map_iterate int = 401
 const cte_en_main int = 1
 
 
-//line decoder.rl:594
+//line decoder.rl:553
 
 type Parser struct {
     cs int // Current Ragel state
@@ -1719,8 +1719,7 @@ func NewParser(maxDepth int) *Parser {
 }
 
 func (this *Parser) flushByteArray(index int, callbacks CteDecoderCallbacks) error {
-    err := callbacks.OnArrayData(this.data[this.arrayStart:index])
-    if err != nil {
+    if err := callbacks.OnArrayData(this.data[this.arrayStart:index]); err != nil {
         return err
     }
     this.arrayStart = index
@@ -1751,13 +1750,13 @@ func (this *Parser) Parse(src []byte, callbacks CteDecoderCallbacks) (isComplete
     _ = eof
     
     
-//line decoder.go:1755
+//line decoder.go:1754
 	{
 	 this.cs = cte_start
 	 this.top = 0
 	}
 
-//line decoder.go:1761
+//line decoder.go:1760
 	{
 	var _klen int
 	var _trans int
@@ -1851,241 +1850,235 @@ utfCharWidth = 1
 		case 4:
 //line decoder.rl:55
 
-        err = callbacks.OnNil()
-        if err != nil {
+        if err = callbacks.OnNil(); err != nil {
             p++; goto _out
 
         }
     
 		case 5:
-//line decoder.rl:62
+//line decoder.rl:61
 
-        err = callbacks.OnBool(true)
-        if err != nil {
+        if err = callbacks.OnBool(true); err != nil {
             p++; goto _out
 
         }
     
 		case 6:
-//line decoder.rl:69
+//line decoder.rl:67
 
-        err = callbacks.OnBool(false)
-        if err != nil {
+        if err = callbacks.OnBool(false); err != nil {
             p++; goto _out
 
         }
     
 		case 7:
-//line decoder.rl:78
+//line decoder.rl:75
 
         this.significandSign = -1
     
 		case 8:
-//line decoder.rl:82
+//line decoder.rl:79
 
         this.exponentSign = -1
     
 		case 9:
-//line decoder.rl:86
+//line decoder.rl:83
 
         this.significand = this.significand * 10 + uint64( this.data[p] - '0')
     
 		case 10:
-//line decoder.rl:90
+//line decoder.rl:87
 
         this.significand = (this.significand << 4) | uint64( this.data[p] - '0')
     
 		case 11:
-//line decoder.rl:92
+//line decoder.rl:89
 
         this.significand = (this.significand << 4) | uint64( this.data[p] - 'a' + 10)
     
 		case 12:
-//line decoder.rl:96
+//line decoder.rl:93
 
         this.significand = this.significand * 10 + uint64( this.data[p] - '0')
         this.exponentAdjust--
     
 		case 13:
-//line decoder.rl:101
+//line decoder.rl:98
 
         this.significand = (this.significand << 4) | uint64( this.data[p] - '0')
         this.exponentAdjust -= 4
     
 		case 14:
-//line decoder.rl:104
+//line decoder.rl:101
 
         this.significand = (this.significand << 4) | uint64( this.data[p] - 'a' + 10)
         this.exponentAdjust -= 4
     
 		case 15:
-//line decoder.rl:109
+//line decoder.rl:106
 
         this.exponent = this.exponent * 10 + int( this.data[p] - '0')
     
 		case 16:
-//line decoder.rl:118
+//line decoder.rl:115
 
         this.significand = (this.significand << 1) | uint64( this.data[p] - '0')
     
 		case 17:
-//line decoder.rl:122
+//line decoder.rl:119
 
         this.significand = (this.significand << 3) | uint64( this.data[p] - '0')
     
 		case 18:
-//line decoder.rl:128
+//line decoder.rl:125
 
         if this.significandSign >= 0 {
             err = callbacks.OnPositiveInt(this.significand)
         } else {
             err = callbacks.OnNegativeInt(this.significand)
         }
-        this.significandSign = 1
-        this.significand = 0
         if err != nil {
             p++; goto _out
 
         }
+        this.significandSign = 1
+        this.significand = 0
     
 		case 19:
-//line decoder.rl:141
+//line decoder.rl:138
 
-        err = callbacks.OnDecimalFloat(int64(this.significand) * int64(this.significandSign), (this.exponent+this.exponentAdjust) * this.exponentSign)
+        if err = callbacks.OnDecimalFloat(int64(this.significand) * int64(this.significandSign),
+        				(this.exponent+this.exponentAdjust) * this.exponentSign); err != nil {
+            p++; goto _out
+
+        }
         this.significandSign = 1
         this.significand = 0
         this.exponentAdjust = 0
         this.exponentSign = 1
         this.exponent = 0
-        if err != nil {
-            p++; goto _out
-
-        }
     
 		case 20:
-//line decoder.rl:153
+//line decoder.rl:150
 
-        err = callbacks.OnFloat(float64(this.significandSign) *
+        if err = callbacks.OnFloat(float64(this.significandSign) *
                     float64(this.significand) *
-                    math.Pow(2.0, float64((this.exponent * this.exponentSign + this.exponentAdjust))))
+                    math.Pow(2.0, float64((this.exponent * this.exponentSign + this.exponentAdjust)))); err != nil {
+            p++; goto _out
+
+        }
         this.significandSign = 1
         this.significand = 0
         this.exponentAdjust = 0
         this.exponentSign = 1
         this.exponent = 0
-        if err != nil {
-            p++; goto _out
-
-        }
     
 		case 21:
-//line decoder.rl:169
+//line decoder.rl:165
 
-        err = callbacks.OnFloat(math.Inf(this.significandSign))
-        this.significandSign = 1
-        if err != nil {
+        if err = callbacks.OnFloat(math.Inf(this.significandSign)); err != nil {
             p++; goto _out
 
         }
+        this.significandSign = 1
     
 		case 22:
-//line decoder.rl:177
+//line decoder.rl:172
 
-        err = callbacks.OnFloat(math.NaN())
-        if err != nil {
+        if err = callbacks.OnFloat(math.NaN()); err != nil {
             p++; goto _out
 
         }
     
 		case 23:
-//line decoder.rl:183
+//line decoder.rl:177
 
         // Just map it to regular NaN
-        err = callbacks.OnFloat(math.NaN())
-        if err != nil {
+        if err = callbacks.OnFloat(math.NaN()); err != nil {
             p++; goto _out
 
         }
     
 		case 24:
-//line decoder.rl:191
+//line decoder.rl:184
 
         this.month = this.month * 10 + int( this.data[p] - '0')
     
 		case 25:
-//line decoder.rl:195
+//line decoder.rl:188
 
         this.day = this.day * 10 + int( this.data[p] - '0')
     
 		case 26:
-//line decoder.rl:199
+//line decoder.rl:192
 
         this.hour = this.hour * 10 + int( this.data[p] - '0')
     
 		case 27:
-//line decoder.rl:203
+//line decoder.rl:196
 
         this.minute = this.minute * 10 + int( this.data[p] - '0')
     
 		case 28:
-//line decoder.rl:207
+//line decoder.rl:200
 
         this.second = this.second * 10 + int( this.data[p] - '0')
     
 		case 29:
-//line decoder.rl:211
+//line decoder.rl:204
 
         this.subsecond = this.subsecond * 10 + int( this.data[p] - '0')
         this.subsecondMultiplier /= 10
     
 		case 30:
-//line decoder.rl:216
+//line decoder.rl:209
 
         this.timezone = append(this.timezone,  this.data[p])
     
 		case 31:
-//line decoder.rl:223
+//line decoder.rl:216
 
-        err = callbacks.OnDate(int(this.significand) * this.significandSign, this.month, this.day)
+        if err = callbacks.OnDate(int(this.significand) * this.significandSign, this.month, this.day); err != nil {
+            p++; goto _out
+
+        }
         this.significandSign = 1
         this.significand = 0
         this.month = 0
         this.day = 0
-        if err != nil {
-            p++; goto _out
-
-        }
     
 		case 32:
-//line decoder.rl:234
+//line decoder.rl:226
 
-        err = callbacks.OnTimeTZ(this.hour,
+        if err = callbacks.OnTimeTZ(this.hour,
                 this.minute,
                 this.second,
                 this.subsecond * this.subsecondMultiplier,
-                string(this.timezone))
+                string(this.timezone)); err != nil {
+            p++; goto _out
+
+        }
         this.hour = 0
         this.minute = 0
         this.second = 0
         this.subsecond = 0
         this.subsecondMultiplier = 1000000000
         this.timezone = this.timezone[:]
-        if err != nil {
-            p++; goto _out
-
-        }
     
 		case 33:
-//line decoder.rl:251
+//line decoder.rl:242
 
-        err = callbacks.OnTimestampTZ(int(this.significand) * this.significandSign,
+        if err = callbacks.OnTimestampTZ(int(this.significand) * this.significandSign,
                 this.month,
                 this.day,
                 this.hour,
                 this.minute,
                 this.second,
                 this.subsecond * this.subsecondMultiplier,
-                string(this.timezone))
+                string(this.timezone)); err != nil {
+            p++; goto _out
+
+        }
         this.significandSign = 1
         this.significand = 0
         this.month = 0
@@ -2096,16 +2089,11 @@ utfCharWidth = 1
         this.subsecond = 0
         this.subsecondMultiplier = 1000000000
         this.timezone = this.timezone[:]
-        if err != nil {
-            p++; goto _out
-
-        }
     
 		case 34:
-//line decoder.rl:275
+//line decoder.rl:265
 
-        err = callbacks.OnContainerBegin(ContainerTypeList)
-        if err != nil {
+        if err = callbacks.OnContainerBegin(ContainerTypeList); err != nil {
             p++; goto _out
 
         }
@@ -2113,10 +2101,9 @@ utfCharWidth = 1
 
     
 		case 35:
-//line decoder.rl:283
+//line decoder.rl:272
 
-        err = callbacks.OnContainerBegin(ContainerTypeMap)
-        if err != nil {
+        if err = callbacks.OnContainerBegin(ContainerTypeMap); err != nil {
             p++; goto _out
 
         }
@@ -2124,10 +2111,9 @@ utfCharWidth = 1
 
     
 		case 36:
-//line decoder.rl:291
+//line decoder.rl:279
 
-        err = callbacks.OnContainerBegin(ContainerTypeMetadataMap)
-        if err != nil {
+        if err = callbacks.OnContainerBegin(ContainerTypeMetadataMap); err != nil {
             p++; goto _out
 
         }
@@ -2135,11 +2121,10 @@ utfCharWidth = 1
 
     
 		case 37:
-//line decoder.rl:299
+//line decoder.rl:286
 
         this.arrayStart = p + 1
-        err = callbacks.OnArrayBegin(ArrayTypeComment)
-        if err != nil {
+        if err = callbacks.OnArrayBegin(ArrayTypeComment); err != nil {
             p++; goto _out
 
         }
@@ -2147,28 +2132,27 @@ utfCharWidth = 1
 
     
 		case 38:
-//line decoder.rl:308
+//line decoder.rl:294
 
         if this.commentDepth == 0 {
             err = callbacks.OnArrayBegin(ArrayTypeComment)
         } else {
             err = callbacks.OnArrayData(this.data[this.arrayStart:p+1])
         }
-        this.arrayStart = p + 1
-        this.commentDepth++
         if err != nil {
             p++; goto _out
 
         }
+        this.arrayStart = p + 1
+        this.commentDepth++
          this.stack[ this.top] =  this.cs;  this.top++;  this.cs = 66; goto _again
 
     
 		case 39:
-//line decoder.rl:322
+//line decoder.rl:308
 
         this.arrayStart = p + 1
-        err = callbacks.OnArrayBegin(ArrayTypeString)
-        if err != nil {
+        if err = callbacks.OnArrayBegin(ArrayTypeString); err != nil {
             p++; goto _out
 
         }
@@ -2176,28 +2160,25 @@ utfCharWidth = 1
 
     
 		case 40:
-//line decoder.rl:331
+//line decoder.rl:316
 
         this.arrayStart = p - utfCharWidth
     
 		case 41:
-//line decoder.rl:333
+//line decoder.rl:318
 
         if this.data[p-1] != '"' {
-            err = callbacks.OnArrayBegin(ArrayTypeString)
-            if err != nil {
+            if err = callbacks.OnArrayBegin(ArrayTypeString); err != nil {
                 fmt.Printf("Err %v\n", err)
                 p++; goto _out
 
             }
-            err = callbacks.OnArrayData(this.data[this.arrayStart:p])
-            if err != nil {
+            if err = callbacks.OnArrayData(this.data[this.arrayStart:p]); err != nil {
                 fmt.Printf("Err %v\n", err)
                 p++; goto _out
 
             }
-            err = callbacks.OnArrayEnd()
-            if err != nil {
+            if err = callbacks.OnArrayEnd(); err != nil {
                 fmt.Printf("Err %v\n", err)
                 p++; goto _out
 
@@ -2205,11 +2186,10 @@ utfCharWidth = 1
         }
     
 		case 42:
-//line decoder.rl:353
+//line decoder.rl:335
 
         this.arrayStart = p + 1
-        err = callbacks.OnArrayBegin(ArrayTypeURI)
-        if err != nil {
+        if err = callbacks.OnArrayBegin(ArrayTypeURI); err != nil {
             p++; goto _out
 
         }
@@ -2217,10 +2197,9 @@ utfCharWidth = 1
 
     
 		case 43:
-//line decoder.rl:362
+//line decoder.rl:343
 
-        err = callbacks.OnArrayBegin(ArrayTypeBinary)
-        if err != nil {
+        if err = callbacks.OnArrayBegin(ArrayTypeBinary); err != nil {
             p++; goto _out
 
         }
@@ -2228,10 +2207,9 @@ utfCharWidth = 1
 
     
 		case 44:
-//line decoder.rl:370
+//line decoder.rl:350
 
-        err = callbacks.OnArrayBegin(ArrayTypeBinary)
-        if err != nil {
+        if err = callbacks.OnArrayBegin(ArrayTypeBinary); err != nil {
             p++; goto _out
 
         }
@@ -2239,15 +2217,13 @@ utfCharWidth = 1
 
     
 		case 45:
-//line decoder.rl:386
+//line decoder.rl:365
 
-        err = callbacks.OnArrayData(this.data[this.arrayStart:p])
-        if err != nil {
+        if err = callbacks.OnArrayData(this.data[this.arrayStart:p]); err != nil {
             p++; goto _out
 
         }
-        err = callbacks.OnArrayEnd()
-        if err != nil {
+        if err = callbacks.OnArrayEnd(); err != nil {
             p++; goto _out
 
         }
@@ -2256,18 +2232,16 @@ goto _again
 
     
 		case 46:
-//line decoder.rl:398
+//line decoder.rl:375
 
-        err = callbacks.OnArrayData(this.data[this.arrayStart:p-1])
-        if err != nil {
+        if err = callbacks.OnArrayData(this.data[this.arrayStart:p-1]); err != nil {
             p++; goto _out
 
         }
         this.arrayStart = p-1
         this.commentDepth--
         if this.commentDepth == 0 {
-            err = callbacks.OnArrayEnd()
-            if err != nil {
+            if err = callbacks.OnArrayEnd(); err != nil {
                 p++; goto _out
 
             }
@@ -2277,65 +2251,58 @@ goto _again
 
     
 		case 47:
-//line decoder.rl:417
+//line decoder.rl:392
 
-                err = this.flushAndAddEscapedCharacter(p-1, '\\', callbacks)
-                if err != nil {
+                if err = this.flushAndAddEscapedCharacter(p-1, '\\', callbacks); err != nil {
                     p++; goto _out
 
                 }
             
 		case 48:
-//line decoder.rl:423
+//line decoder.rl:397
 
-                err = this.flushAndAddEscapedCharacter(p-1, '\n', callbacks)
-                if err != nil {
+                if err = this.flushAndAddEscapedCharacter(p-1, '\n', callbacks); err != nil {
                     p++; goto _out
 
                 }
             
 		case 49:
-//line decoder.rl:429
+//line decoder.rl:402
 
-                err = this.flushAndAddEscapedCharacter(p-1, '\r', callbacks)
-                if err != nil {
+                if err = this.flushAndAddEscapedCharacter(p-1, '\r', callbacks); err != nil {
                     p++; goto _out
 
                 }
             
 		case 50:
-//line decoder.rl:435
+//line decoder.rl:407
 
-                err = this.flushAndAddEscapedCharacter(p-1, '\t', callbacks)
-                if err != nil {
+                if err = this.flushAndAddEscapedCharacter(p-1, '\t', callbacks); err != nil {
                     p++; goto _out
 
                 }
             
 		case 51:
-//line decoder.rl:441
+//line decoder.rl:412
 
-                err = this.flushAndAddEscapedCharacter(p-1, '"', callbacks)
-                if err != nil {
+                if err = this.flushAndAddEscapedCharacter(p-1, '"', callbacks); err != nil {
                     p++; goto _out
 
                 }
             
 		case 52:
-//line decoder.rl:447
+//line decoder.rl:417
 
                 return false, fmt.Errorf("\\%c: Illegal escape encoding", this.data[p])
             
 		case 53:
-//line decoder.rl:454
+//line decoder.rl:424
 
-        err = callbacks.OnArrayData(this.data[this.arrayStart:p])
-        if err != nil {
+        if err = callbacks.OnArrayData(this.data[this.arrayStart:p]); err != nil {
             p++; goto _out
 
         }
-        err = callbacks.OnArrayEnd()
-        if err != nil {
+        if err = callbacks.OnArrayEnd(); err != nil {
             p++; goto _out
 
         }
@@ -2344,15 +2311,13 @@ goto _again
 
     
 		case 54:
-//line decoder.rl:466
+//line decoder.rl:434
 
-        err = callbacks.OnArrayData(this.data[this.arrayStart:p])
-        if err != nil {
+        if err = callbacks.OnArrayData(this.data[this.arrayStart:p]); err != nil {
             p++; goto _out
 
         }
-        err = callbacks.OnArrayEnd()
-        if err != nil {
+        if err = callbacks.OnArrayEnd(); err != nil {
             p++; goto _out
 
         }
@@ -2361,41 +2326,39 @@ goto _again
 
     
 		case 55:
-//line decoder.rl:478
+//line decoder.rl:444
 
         this.binaryNext = ( this.data[p] - '0') << 4
     
 		case 56:
-//line decoder.rl:481
+//line decoder.rl:447
 
         this.binaryNext = ( this.data[p] - 'a' + 10) << 4
     
 		case 57:
-//line decoder.rl:484
+//line decoder.rl:450
 
         this.binaryNext |=  this.data[p] - '0'
     
 		case 58:
-//line decoder.rl:487
+//line decoder.rl:453
 
         this.binaryNext |=  this.data[p] - 'a' + 10
     
 		case 59:
-//line decoder.rl:490
+//line decoder.rl:456
 
         this.binaryData = append(this.binaryData, this.binaryNext)
     
 		case 60:
-//line decoder.rl:494
+//line decoder.rl:460
 
-        err = callbacks.OnArrayData(this.binaryData)
-        if err != nil {
+        if err = callbacks.OnArrayData(this.binaryData); err != nil {
             p++; goto _out
 
         }
         this.binaryData = this.binaryData[:0]
-        err = callbacks.OnArrayEnd()
-        if err != nil {
+        if err = callbacks.OnArrayEnd(); err != nil {
             p++; goto _out
 
         }
@@ -2404,32 +2367,32 @@ goto _again
 
     
 		case 61:
-//line decoder.rl:507
+//line decoder.rl:471
 
         this.binaryAccumulator = (this.binaryAccumulator << 6) | uint( this.data[p] - 'A')
     
 		case 62:
-//line decoder.rl:510
+//line decoder.rl:474
 
         this.binaryAccumulator = (this.binaryAccumulator << 6) | uint( this.data[p] - 'a' + 26)
     
 		case 63:
-//line decoder.rl:513
+//line decoder.rl:477
 
         this.binaryAccumulator = (this.binaryAccumulator << 6) | uint( this.data[p] - '0' + 52)
     
 		case 64:
-//line decoder.rl:516
+//line decoder.rl:480
 
         this.binaryAccumulator = (this.binaryAccumulator << 6) | 62
     
 		case 65:
-//line decoder.rl:519
+//line decoder.rl:483
 
         this.binaryAccumulator = (this.binaryAccumulator << 6) | 63
     
 		case 66:
-//line decoder.rl:523
+//line decoder.rl:487
 
         this.base64Digits++
         if this.base64Digits == 4 {
@@ -2441,7 +2404,7 @@ goto _again
         }
     
 		case 67:
-//line decoder.rl:534
+//line decoder.rl:498
 
         switch this.base64Digits {
             case 0:
@@ -2458,16 +2421,14 @@ goto _again
         this.base64Digits = 0
     
 		case 68:
-//line decoder.rl:550
+//line decoder.rl:514
 
-        err = callbacks.OnArrayData(this.binaryData)
-        if err != nil {
+        if err = callbacks.OnArrayData(this.binaryData); err != nil {
             p++; goto _out
 
         }
         this.binaryData = this.binaryData[:0]
-        err = callbacks.OnArrayEnd()
-        if err != nil {
+        if err = callbacks.OnArrayEnd(); err != nil {
             p++; goto _out
 
         }
@@ -2476,10 +2437,9 @@ goto _again
 
     
 		case 69:
-//line decoder.rl:563
+//line decoder.rl:525
 
-        err = callbacks.OnContainerEnd()
-        if err != nil {
+        if err = callbacks.OnContainerEnd(); err != nil {
             p++; goto _out
 
         }
@@ -2488,10 +2448,9 @@ goto _again
 
     
 		case 70:
-//line decoder.rl:571
+//line decoder.rl:532
 
-        err = callbacks.OnContainerEnd()
-        if err != nil {
+        if err = callbacks.OnContainerEnd(); err != nil {
             p++; goto _out
 
         }
@@ -2500,10 +2459,9 @@ goto _again
 
     
 		case 71:
-//line decoder.rl:579
+//line decoder.rl:539
 
-        err = callbacks.OnContainerEnd()
-        if err != nil {
+        if err = callbacks.OnContainerEnd(); err != nil {
             p++; goto _out
 
         }
@@ -2511,7 +2469,7 @@ goto _again
 goto _again
 
     
-//line decoder.go:2515
+//line decoder.go:2473
 		}
 	}
 
@@ -2531,122 +2489,119 @@ _again:
 			__acts++
 			switch _cte_actions[__acts-1] {
 			case 18:
-//line decoder.rl:128
+//line decoder.rl:125
 
         if this.significandSign >= 0 {
             err = callbacks.OnPositiveInt(this.significand)
         } else {
             err = callbacks.OnNegativeInt(this.significand)
         }
-        this.significandSign = 1
-        this.significand = 0
         if err != nil {
             p++; goto _out
 
         }
+        this.significandSign = 1
+        this.significand = 0
     
 			case 19:
-//line decoder.rl:141
+//line decoder.rl:138
 
-        err = callbacks.OnDecimalFloat(int64(this.significand) * int64(this.significandSign), (this.exponent+this.exponentAdjust) * this.exponentSign)
+        if err = callbacks.OnDecimalFloat(int64(this.significand) * int64(this.significandSign),
+        				(this.exponent+this.exponentAdjust) * this.exponentSign); err != nil {
+            p++; goto _out
+
+        }
         this.significandSign = 1
         this.significand = 0
         this.exponentAdjust = 0
         this.exponentSign = 1
         this.exponent = 0
-        if err != nil {
-            p++; goto _out
-
-        }
     
 			case 20:
-//line decoder.rl:153
+//line decoder.rl:150
 
-        err = callbacks.OnFloat(float64(this.significandSign) *
+        if err = callbacks.OnFloat(float64(this.significandSign) *
                     float64(this.significand) *
-                    math.Pow(2.0, float64((this.exponent * this.exponentSign + this.exponentAdjust))))
+                    math.Pow(2.0, float64((this.exponent * this.exponentSign + this.exponentAdjust)))); err != nil {
+            p++; goto _out
+
+        }
         this.significandSign = 1
         this.significand = 0
         this.exponentAdjust = 0
         this.exponentSign = 1
         this.exponent = 0
-        if err != nil {
-            p++; goto _out
-
-        }
     
 			case 21:
-//line decoder.rl:169
+//line decoder.rl:165
 
-        err = callbacks.OnFloat(math.Inf(this.significandSign))
-        this.significandSign = 1
-        if err != nil {
+        if err = callbacks.OnFloat(math.Inf(this.significandSign)); err != nil {
             p++; goto _out
 
         }
+        this.significandSign = 1
     
 			case 22:
-//line decoder.rl:177
+//line decoder.rl:172
 
-        err = callbacks.OnFloat(math.NaN())
-        if err != nil {
+        if err = callbacks.OnFloat(math.NaN()); err != nil {
             p++; goto _out
 
         }
     
 			case 23:
-//line decoder.rl:183
+//line decoder.rl:177
 
         // Just map it to regular NaN
-        err = callbacks.OnFloat(math.NaN())
-        if err != nil {
+        if err = callbacks.OnFloat(math.NaN()); err != nil {
             p++; goto _out
 
         }
     
 			case 31:
-//line decoder.rl:223
+//line decoder.rl:216
 
-        err = callbacks.OnDate(int(this.significand) * this.significandSign, this.month, this.day)
+        if err = callbacks.OnDate(int(this.significand) * this.significandSign, this.month, this.day); err != nil {
+            p++; goto _out
+
+        }
         this.significandSign = 1
         this.significand = 0
         this.month = 0
         this.day = 0
-        if err != nil {
-            p++; goto _out
-
-        }
     
 			case 32:
-//line decoder.rl:234
+//line decoder.rl:226
 
-        err = callbacks.OnTimeTZ(this.hour,
+        if err = callbacks.OnTimeTZ(this.hour,
                 this.minute,
                 this.second,
                 this.subsecond * this.subsecondMultiplier,
-                string(this.timezone))
+                string(this.timezone)); err != nil {
+            p++; goto _out
+
+        }
         this.hour = 0
         this.minute = 0
         this.second = 0
         this.subsecond = 0
         this.subsecondMultiplier = 1000000000
         this.timezone = this.timezone[:]
-        if err != nil {
-            p++; goto _out
-
-        }
     
 			case 33:
-//line decoder.rl:251
+//line decoder.rl:242
 
-        err = callbacks.OnTimestampTZ(int(this.significand) * this.significandSign,
+        if err = callbacks.OnTimestampTZ(int(this.significand) * this.significandSign,
                 this.month,
                 this.day,
                 this.hour,
                 this.minute,
                 this.second,
                 this.subsecond * this.subsecondMultiplier,
-                string(this.timezone))
+                string(this.timezone)); err != nil {
+            p++; goto _out
+
+        }
         this.significandSign = 1
         this.significand = 0
         this.month = 0
@@ -2657,41 +2612,34 @@ _again:
         this.subsecond = 0
         this.subsecondMultiplier = 1000000000
         this.timezone = this.timezone[:]
-        if err != nil {
-            p++; goto _out
-
-        }
     
 			case 40:
-//line decoder.rl:331
+//line decoder.rl:316
 
         this.arrayStart = p - utfCharWidth
     
 			case 41:
-//line decoder.rl:333
+//line decoder.rl:318
 
         if this.data[p-1] != '"' {
-            err = callbacks.OnArrayBegin(ArrayTypeString)
-            if err != nil {
+            if err = callbacks.OnArrayBegin(ArrayTypeString); err != nil {
                 fmt.Printf("Err %v\n", err)
                 p++; goto _out
 
             }
-            err = callbacks.OnArrayData(this.data[this.arrayStart:p])
-            if err != nil {
+            if err = callbacks.OnArrayData(this.data[this.arrayStart:p]); err != nil {
                 fmt.Printf("Err %v\n", err)
                 p++; goto _out
 
             }
-            err = callbacks.OnArrayEnd()
-            if err != nil {
+            if err = callbacks.OnArrayEnd(); err != nil {
                 fmt.Printf("Err %v\n", err)
                 p++; goto _out
 
             }
         }
     
-//line decoder.go:2695
+//line decoder.go:2643
 			}
 		}
 	}
@@ -2699,7 +2647,7 @@ _again:
 	_out: {}
 	}
 
-//line decoder.rl:673
+//line decoder.rl:631
 
 
     if this.ts > 0 {

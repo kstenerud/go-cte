@@ -53,22 +53,19 @@ type CteDecoderCallbacks interface {
     unquoted_safe = unquoted_safe_first_char | [0-9];
 
     nil = "@nil" @{
-        err = callbacks.OnNil()
-        if err != nil {
+        if err = callbacks.OnNil(); err != nil {
             fbreak;
         }
     };
 
     true = "@true" @{
-        err = callbacks.OnBool(true)
-        if err != nil {
+        if err = callbacks.OnBool(true); err != nil {
             fbreak;
         }
     };
 
     false = "@false" @{
-        err = callbacks.OnBool(false)
-        if err != nil {
+        if err = callbacks.OnBool(false); err != nil {
             fbreak;
         }
     };
@@ -131,59 +128,55 @@ type CteDecoderCallbacks interface {
         } else {
             err = callbacks.OnNegativeInt(this.significand)
         }
-        this.significandSign = 1
-        this.significand = 0
         if err != nil {
             fbreak;
         }
+        this.significandSign = 1
+        this.significand = 0
     };
 
     float_decimal = numeric_first_component '.' fractional_digit_decimal+ exponent_decimal? %{
-        err = callbacks.OnDecimalFloat(int64(this.significand) * int64(this.significandSign), (this.exponent+this.exponentAdjust) * this.exponentSign)
+        if err = callbacks.OnDecimalFloat(int64(this.significand) * int64(this.significandSign),
+        				(this.exponent+this.exponentAdjust) * this.exponentSign); err != nil {
+            fbreak;
+        }
         this.significandSign = 1
         this.significand = 0
         this.exponentAdjust = 0
         this.exponentSign = 1
         this.exponent = 0
-        if err != nil {
-            fbreak;
-        }
     };
 
     float_hex = integer_hex '.' fractional_digit_hex+ exponent_hex %{
-        err = callbacks.OnFloat(float64(this.significandSign) *
+        if err = callbacks.OnFloat(float64(this.significandSign) *
                     float64(this.significand) *
-                    math.Pow(2.0, float64((this.exponent * this.exponentSign + this.exponentAdjust))))
+                    math.Pow(2.0, float64((this.exponent * this.exponentSign + this.exponentAdjust)))); err != nil {
+            fbreak;
+        }
         this.significandSign = 1
         this.significand = 0
         this.exponentAdjust = 0
         this.exponentSign = 1
         this.exponent = 0
-        if err != nil {
-            fbreak;
-        }
     };
 
     float = float_decimal | float_hex;
 
     inf = significand_sign? "@inf" %{
-        err = callbacks.OnFloat(math.Inf(this.significandSign))
-        this.significandSign = 1
-        if err != nil {
+        if err = callbacks.OnFloat(math.Inf(this.significandSign)); err != nil {
             fbreak;
         }
+        this.significandSign = 1
     };
 
     nan = "@nan" %{
-        err = callbacks.OnFloat(math.NaN())
-        if err != nil {
+        if err = callbacks.OnFloat(math.NaN()); err != nil {
             fbreak;
         }
     };
     snan = "@snan" %{
         // Just map it to regular NaN
-        err = callbacks.OnFloat(math.NaN())
-        if err != nil {
+        if err = callbacks.OnFloat(math.NaN()); err != nil {
             fbreak;
         }
     };
@@ -221,42 +214,42 @@ type CteDecoderCallbacks interface {
     time_tz_portion = hour ':' minute ':' second ('.' subsecond)? ('/' timezone)?;
 
     date = date_portion %{
-        err = callbacks.OnDate(int(this.significand) * this.significandSign, this.month, this.day)
+        if err = callbacks.OnDate(int(this.significand) * this.significandSign, this.month, this.day); err != nil {
+            fbreak;
+        }
         this.significandSign = 1
         this.significand = 0
         this.month = 0
         this.day = 0
-        if err != nil {
-            fbreak;
-        }
     };
 
     time = time_tz_portion %{
-        err = callbacks.OnTimeTZ(this.hour,
+        if err = callbacks.OnTimeTZ(this.hour,
                 this.minute,
                 this.second,
                 this.subsecond * this.subsecondMultiplier,
-                string(this.timezone))
+                string(this.timezone)); err != nil {
+            fbreak;
+        }
         this.hour = 0
         this.minute = 0
         this.second = 0
         this.subsecond = 0
         this.subsecondMultiplier = 1000000000
         this.timezone = this.timezone[:]
-        if err != nil {
-            fbreak;
-        }
     };
 
     timestamp = date_portion '/' time_tz_portion %{
-        err = callbacks.OnTimestampTZ(int(this.significand) * this.significandSign,
+        if err = callbacks.OnTimestampTZ(int(this.significand) * this.significandSign,
                 this.month,
                 this.day,
                 this.hour,
                 this.minute,
                 this.second,
                 this.subsecond * this.subsecondMultiplier,
-                string(this.timezone))
+                string(this.timezone)); err != nil {
+            fbreak;
+        }
         this.significandSign = 1
         this.significand = 0
         this.month = 0
@@ -267,30 +260,24 @@ type CteDecoderCallbacks interface {
         this.subsecond = 0
         this.subsecondMultiplier = 1000000000
         this.timezone = this.timezone[:]
-        if err != nil {
-            fbreak;
-        }
     };
 
     list = '[' @{
-        err = callbacks.OnContainerBegin(ContainerTypeList)
-        if err != nil {
+        if err = callbacks.OnContainerBegin(ContainerTypeList); err != nil {
             fbreak;
         }
         fcall list_iterate;
     };
 
     map = '{' @{
-        err = callbacks.OnContainerBegin(ContainerTypeMap)
-        if err != nil {
+        if err = callbacks.OnContainerBegin(ContainerTypeMap); err != nil {
             fbreak;
         }
         fcall map_iterate;
     };
 
     metadata_map = '(' @{
-        err = callbacks.OnContainerBegin(ContainerTypeMetadataMap)
-        if err != nil {
+        if err = callbacks.OnContainerBegin(ContainerTypeMetadataMap); err != nil {
             fbreak;
         }
         fcall metadata_map_iterate;
@@ -298,8 +285,7 @@ type CteDecoderCallbacks interface {
 
     comment = "//" @{
         this.arrayStart = fpc + 1
-        err = callbacks.OnArrayBegin(ArrayTypeComment)
-        if err != nil {
+        if err = callbacks.OnArrayBegin(ArrayTypeComment); err != nil {
             fbreak;
         }
         fcall comment_iterate;
@@ -311,18 +297,17 @@ type CteDecoderCallbacks interface {
         } else {
             err = callbacks.OnArrayData(this.data[this.arrayStart:fpc+1])
         }
-        this.arrayStart = fpc + 1
-        this.commentDepth++
         if err != nil {
             fbreak;
         }
+        this.arrayStart = fpc + 1
+        this.commentDepth++
         fcall multiline_comment_iterate;
     };
 
     string = '"' @{
         this.arrayStart = fpc + 1
-        err = callbacks.OnArrayBegin(ArrayTypeString)
-        if err != nil {
+        if err = callbacks.OnArrayBegin(ArrayTypeString); err != nil {
             fbreak;
         }
         fcall string_iterate;
@@ -332,18 +317,15 @@ type CteDecoderCallbacks interface {
         this.arrayStart = fpc - utfCharWidth
     } %{
         if this.data[fpc-1] != '"' {
-            err = callbacks.OnArrayBegin(ArrayTypeString)
-            if err != nil {
+            if err = callbacks.OnArrayBegin(ArrayTypeString); err != nil {
                 fmt.Printf("Err %v\n", err)
                 fbreak;
             }
-            err = callbacks.OnArrayData(this.data[this.arrayStart:fpc])
-            if err != nil {
+            if err = callbacks.OnArrayData(this.data[this.arrayStart:fpc]); err != nil {
                 fmt.Printf("Err %v\n", err)
                 fbreak;
             }
-            err = callbacks.OnArrayEnd()
-            if err != nil {
+            if err = callbacks.OnArrayEnd(); err != nil {
                 fmt.Printf("Err %v\n", err)
                 fbreak;
             }
@@ -352,24 +334,21 @@ type CteDecoderCallbacks interface {
 
     uri = 'u' '"' @{
         this.arrayStart = fpc + 1
-        err = callbacks.OnArrayBegin(ArrayTypeURI)
-        if err != nil {
+        if err = callbacks.OnArrayBegin(ArrayTypeURI); err != nil {
             fbreak;
         }
         fcall uri_iterate;
     };
 
     binary_hex = 'h' '"' @{
-        err = callbacks.OnArrayBegin(ArrayTypeBinary)
-        if err != nil {
+        if err = callbacks.OnArrayBegin(ArrayTypeBinary); err != nil {
             fbreak;
         }
         fcall binary_hex_iterate;
     };
 
     binary_base64 = 'b' '"' @{
-        err = callbacks.OnArrayBegin(ArrayTypeBinary)
-        if err != nil {
+        if err = callbacks.OnArrayBegin(ArrayTypeBinary); err != nil {
             fbreak;
         }
         fcall binary_base64_iterate;
@@ -384,27 +363,23 @@ type CteDecoderCallbacks interface {
     kv_pair = object_pre keyable object_post '=' value;
 
     comment_iterate := [^\n]* '\n' @{
-        err = callbacks.OnArrayData(this.data[this.arrayStart:fpc])
-        if err != nil {
+        if err = callbacks.OnArrayData(this.data[this.arrayStart:fpc]); err != nil {
             fbreak;
         }
-        err = callbacks.OnArrayEnd()
-        if err != nil {
+        if err = callbacks.OnArrayEnd(); err != nil {
             fbreak;
         }
         fret;
     };
 
     multiline_comment_iterate := any* multiline_comment? "*/" @{
-        err = callbacks.OnArrayData(this.data[this.arrayStart:fpc-1])
-        if err != nil {
+        if err = callbacks.OnArrayData(this.data[this.arrayStart:fpc-1]); err != nil {
             fbreak;
         }
         this.arrayStart = fpc-1
         this.commentDepth--
         if this.commentDepth == 0 {
-            err = callbacks.OnArrayEnd()
-            if err != nil {
+            if err = callbacks.OnArrayEnd(); err != nil {
                 fbreak;
             }
         }
@@ -415,32 +390,27 @@ type CteDecoderCallbacks interface {
     ('\\'
         (
             ('\\' @{
-                err = this.flushAndAddEscapedCharacter(fpc-1, '\\', callbacks)
-                if err != nil {
+                if err = this.flushAndAddEscapedCharacter(fpc-1, '\\', callbacks); err != nil {
                     fbreak;
                 }
             }) |
             ('n' @{
-                err = this.flushAndAddEscapedCharacter(fpc-1, '\n', callbacks)
-                if err != nil {
+                if err = this.flushAndAddEscapedCharacter(fpc-1, '\n', callbacks); err != nil {
                     fbreak;
                 }
             }) |
             ('r' @{
-                err = this.flushAndAddEscapedCharacter(fpc-1, '\r', callbacks)
-                if err != nil {
+                if err = this.flushAndAddEscapedCharacter(fpc-1, '\r', callbacks); err != nil {
                     fbreak;
                 }
             }) |
             ('t' @{
-                err = this.flushAndAddEscapedCharacter(fpc-1, '\t', callbacks)
-                if err != nil {
+                if err = this.flushAndAddEscapedCharacter(fpc-1, '\t', callbacks); err != nil {
                     fbreak;
                 }
             }) |
             ('"' @{
-                err = this.flushAndAddEscapedCharacter(fpc-1, '"', callbacks)
-                if err != nil {
+                if err = this.flushAndAddEscapedCharacter(fpc-1, '"', callbacks); err != nil {
                     fbreak;
                 }
             }) |
@@ -452,24 +422,20 @@ type CteDecoderCallbacks interface {
     );
 
     string_iterate := string_sequence* '"' @{
-        err = callbacks.OnArrayData(this.data[this.arrayStart:fpc])
-        if err != nil {
+        if err = callbacks.OnArrayData(this.data[this.arrayStart:fpc]); err != nil {
             fbreak;
         }
-        err = callbacks.OnArrayEnd()
-        if err != nil {
+        if err = callbacks.OnArrayEnd(); err != nil {
             fbreak;
         }
         fret;
     };
 
     uri_iterate := [ !#-~]+ '"' @{
-        err = callbacks.OnArrayData(this.data[this.arrayStart:fpc])
-        if err != nil {
+        if err = callbacks.OnArrayData(this.data[this.arrayStart:fpc]); err != nil {
             fbreak;
         }
-        err = callbacks.OnArrayEnd()
-        if err != nil {
+        if err = callbacks.OnArrayEnd(); err != nil {
             fbreak;
         }
         fret;
@@ -492,13 +458,11 @@ type CteDecoderCallbacks interface {
     };
 
     binary_hex_iterate := binary_hex_sequence* '"' @{
-        err = callbacks.OnArrayData(this.binaryData)
-        if err != nil {
+        if err = callbacks.OnArrayData(this.binaryData); err != nil {
             fbreak;
         }
         this.binaryData = this.binaryData[:0]
-        err = callbacks.OnArrayEnd()
-        if err != nil {
+        if err = callbacks.OnArrayEnd(); err != nil {
             fbreak;
         }
         fret;
@@ -548,37 +512,32 @@ type CteDecoderCallbacks interface {
     };
 
     binary_base64_iterate := base64_sequence @{
-        err = callbacks.OnArrayData(this.binaryData)
-        if err != nil {
+        if err = callbacks.OnArrayData(this.binaryData); err != nil {
             fbreak;
         }
         this.binaryData = this.binaryData[:0]
-        err = callbacks.OnArrayEnd()
-        if err != nil {
+        if err = callbacks.OnArrayEnd(); err != nil {
             fbreak;
         }
         fret;
     };
 
     list_iterate := ( value (ws value)* )? ws* ']' @{
-        err = callbacks.OnContainerEnd()
-        if err != nil {
+        if err = callbacks.OnContainerEnd(); err != nil {
             fbreak;
         }
         fret;
     };
 
     map_iterate := ( kv_pair (ws kv_pair)* )? ws* '}' @{
-        err = callbacks.OnContainerEnd()
-        if err != nil {
+        if err = callbacks.OnContainerEnd(); err != nil {
             fbreak;
         }
         fret;
     };
 
     metadata_map_iterate := ( kv_pair (ws kv_pair)* )? ws* ')' @{
-        err = callbacks.OnContainerEnd()
-        if err != nil {
+        if err = callbacks.OnContainerEnd(); err != nil {
             fbreak;
         }
         fret;
@@ -636,8 +595,7 @@ func NewParser(maxDepth int) *Parser {
 }
 
 func (this *Parser) flushByteArray(index int, callbacks CteDecoderCallbacks) error {
-    err := callbacks.OnArrayData(this.data[this.arrayStart:index])
-    if err != nil {
+    if err := callbacks.OnArrayData(this.data[this.arrayStart:index]); err != nil {
         return err
     }
     this.arrayStart = index
