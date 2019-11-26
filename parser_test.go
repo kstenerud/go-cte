@@ -1,7 +1,6 @@
 package cte
 
 import (
-	"math"
 	"testing"
 )
 
@@ -10,9 +9,9 @@ func TestBroken(t *testing.T) {
 }
 
 func TestWhitespace(t *testing.T) {
-	assertDecoded(t, " @nil", NilValue)
-	assertDecoded(t, "@nil ", NilValue)
-	assertDecoded(t, " \t@nil \t ", NilValue)
+	assertDecoded(t, " @nil", Nil())
+	assertDecoded(t, "@nil ", Nil())
+	assertDecoded(t, " \t@nil \t ", Nil())
 
 	assertDecodeFails(t, "\b")
 	assertDecodeFails(t, "\f")
@@ -20,7 +19,7 @@ func TestWhitespace(t *testing.T) {
 }
 
 func TestNil(t *testing.T) {
-	assertDecoded(t, "@nil", NilValue)
+	assertDecoded(t, "@nil", Nil())
 }
 
 func TestBool(t *testing.T) {
@@ -78,14 +77,13 @@ func TestFloatHex(t *testing.T) {
 }
 
 func TestInf(t *testing.T) {
-	assertDecoded(t, "@inf", math.Inf(1))
-	assertDecoded(t, "-@inf", math.Inf(-1))
+	assertDecoded(t, "@inf", Inf())
+	assertDecoded(t, "-@inf", NInf())
 }
 
 func TestNan(t *testing.T) {
-	assertDecoded(t, "@nan", math.NaN())
-	// Note: snan is converted to regular nan
-	assertDecoded(t, "@snan", math.NaN())
+	assertDecoded(t, "@nan", Nan())
+	assertDecoded(t, "@snan", SNan())
 }
 
 func TestString(t *testing.T) {
@@ -104,73 +102,73 @@ func TestUnquotedString(t *testing.T) {
 }
 
 func TestURI(t *testing.T) {
-	assertDecoded(t, "u\"http://example.com\"", asURL("http://example.com"))
-	assertDecoded(t, "u\"mailto:me@me.com\"", asURL("mailto:me@me.com"))
-	assertDecoded(t, "u\"urn:oasis:names:specification:docbook:dtd:xml:4.1.2\"", asURL("urn:oasis:names:specification:docbook:dtd:xml:4.1.2"))
+	assertDecoded(t, "u\"http://example.com\"", URI("http://example.com"))
+	assertDecoded(t, "u\"mailto:me@me.com\"", URI("mailto:me@me.com"))
+	assertDecoded(t, "u\"urn:oasis:names:specification:docbook:dtd:xml:4.1.2\"", URI("urn:oasis:names:specification:docbook:dtd:xml:4.1.2"))
 }
 
 func TestBinaryHex(t *testing.T) {
-	assertDecoded(t, "h\"1f9455\"", []byte{0x1f, 0x94, 0x55})
+	assertDecoded(t, "h\"1f9455\"", Bytes(0x1f, 0x94, 0x55))
 }
 
 func TestBase64Hex(t *testing.T) {
-	assertBase64Decoded(t, []byte{0x11, 0xf4, 0x55})
-	assertBase64Decoded(t, []byte{0xff, 0x00, 0x74, 0xa8, 0x1f, 0xff, 0x35, 0x3d, 0x98})
-	assertBase64Decoded(t, []byte{0xff, 0x00, 0x74, 0xa8, 0x1f, 0xff, 0x35, 0x3d})
-	assertBase64Decoded(t, []byte{0xff, 0x00, 0x74, 0xa8, 0x1f, 0xff, 0x35})
-	assertBase64Decoded(t, []byte{0xff, 0x00, 0x74, 0xa8, 0x1f, 0xff})
-	assertDecoded(t,  "b\" / w B 0 q B / / \"", []byte{0xff, 0x00, 0x74, 0xa8, 0x1f, 0xff})
+	assertBase64Decoded(t, Bytes(0x11, 0xf4, 0x55))
+	assertBase64Decoded(t, Bytes(0xff, 0x00, 0x74, 0xa8, 0x1f, 0xff, 0x35, 0x3d, 0x98))
+	assertBase64Decoded(t, Bytes(0xff, 0x00, 0x74, 0xa8, 0x1f, 0xff, 0x35, 0x3d))
+	assertBase64Decoded(t, Bytes(0xff, 0x00, 0x74, 0xa8, 0x1f, 0xff, 0x35))
+	assertBase64Decoded(t, Bytes(0xff, 0x00, 0x74, 0xa8, 0x1f, 0xff))
+	assertDecoded(t,  "b\" / w B 0 q B / / \"", Bytes(0xff, 0x00, 0x74, 0xa8, 0x1f, 0xff))
 }
 
 func TestDate(t *testing.T) {
-	assertDecoded(t, "1000-10-1", asDate(1000, 10, 1))
+	assertDecoded(t, "1000-10-1", Date(1000, 10, 1))
 }
 
 func TestTime(t *testing.T) {
-	assertDecoded(t, "10:45:01.3014234/Europe/Paris", asTime(10, 45, 1, 301423400, "Europe/Paris"))
+	assertDecoded(t, "10:45:01.3014234/Europe/Paris", Time(10, 45, 1, 301423400, "Europe/Paris"))
 }
 
 func TestTimestamp(t *testing.T) {
-	assertDecoded(t, "2001-1-2/5:08:09.999/America/Los_Angeles", asTimestamp(2001, 1, 2, 5, 8, 9, 999000000, "America/Los_Angeles"))
+	assertDecoded(t, "2001-1-2/5:08:09.999/America/Los_Angeles", TS(2001, 1, 2, 5, 8, 9, 999000000, "America/Los_Angeles"))
 }
 
 func TestList(t *testing.T) {
-	assertDecoded(t, "[]", asList())
-	assertDecoded(t, "[ ]", asList())
-	assertDecoded(t, "[@true]", asList(true))
-	assertDecoded(t, "[@true @false]", asList(true, false))
-	assertDecoded(t, "  [  @true   @false ]   ", asList(true, false))
-	assertDecoded(t, "[@true @false  \"a string\" ]", asList(true, false, "a string"))
+	assertDecoded(t, "[]", List())
+	assertDecoded(t, "[ ]", List())
+	assertDecoded(t, "[@true]", List(true))
+	assertDecoded(t, "[@true @false]", List(true, false))
+	assertDecoded(t, "  [  @true   @false ]   ", List(true, false))
+	assertDecoded(t, "[@true @false  \"a string\" ]", List(true, false, "a string"))
 }
 
 func TestMap(t *testing.T) {
-	assertDecoded(t, "{}", asMap())
-	assertDecoded(t, "{ }", asMap())
-	assertDecoded(t, "{@true = @false}", asMap(true, false))
-	assertDecoded(t, "{@true=@false}", asMap(true, false))
-	assertDecoded(t, "  {    @true   =    @false   }  ", asMap(true, false))
-	assertDecoded(t, "{@true = @false @false = @true}", asMap(true, false, false, true))
-	assertDecoded(t, "{\"true\"=@true \"false\"=@false}", asMap("true", true, "false", false))
+	assertDecoded(t, "{}", Map())
+	assertDecoded(t, "{ }", Map())
+	assertDecoded(t, "{@true = @false}", Map(true, false))
+	assertDecoded(t, "{@true=@false}", Map(true, false))
+	assertDecoded(t, "  {    @true   =    @false   }  ", Map(true, false))
+	assertDecoded(t, "{@true = @false @false = @true}", Map(true, false, false, true))
+	assertDecoded(t, "{\"true\"=@true \"false\"=@false}", Map("true", true, "false", false))
 
 	assertDecodeFails(t, "{@true}")
 	assertDecodeFails(t, "{@true =}")
 }
 
 func TestMixedContainers(t *testing.T) {
-	assertDecoded(t, "[{}]", asList(asMap()))
-	assertDecoded(t, "[{@true = [@nil @nil]}]", asList(asMap(true, asList(NilValue, NilValue))))
+	assertDecoded(t, "[{}]", List(Map()))
+	assertDecoded(t, "[{@true = [@nil @nil]}]", List(Map(true, List(Nil(), Nil()))))
 }
 
 func TestMetadata(t *testing.T) {
-	assertDecoded(t, "()", asMetadataMap())
-	assertDecoded(t, "(@true = @false)", asMetadataMap(true, false))
-	assertDecoded(t, "(@true=@false)", asMetadataMap(true, false))
-	assertDecoded(t, "  (    @true   =    @false   )  ", asMetadataMap(true, false))
-	assertDecoded(t, "(@true = @false @false = @true)", asMetadataMap(true, false, false, true))
+	assertDecoded(t, "()", Meta())
+	assertDecoded(t, "(@true = @false)", Meta(true, false))
+	assertDecoded(t, "(@true=@false)", Meta(true, false))
+	assertDecoded(t, "  (    @true   =    @false   )  ", Meta(true, false))
+	assertDecoded(t, "(@true = @false @false = @true)", Meta(true, false, false, true))
 }
 
 func TestComment(t *testing.T) {
-	assertDecoded(t, "// This is a comment\n", " This is a comment")
-	assertDecoded(t, "/* This is a comment */", " This is a comment ")
-	assertDecoded(t, "/* /* This is a comment */ */", " /* This is a comment */ ")
+	assertDecoded(t, "// This is a comment\n", Comment(" This is a comment"))
+	assertDecoded(t, "/* This is a comment */", Comment(" This is a comment "))
+	assertDecoded(t, "/* /* This is a comment */ */", Comment(" /* This is a comment */ "))
 }

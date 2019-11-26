@@ -13,19 +13,44 @@ import (
 	"time"
 )
 
-// General
+// ============================================================================
+// Types
+// ============================================================================
 
-type MetadataMap map[interface{}]interface{}
-type Comment string
+type NilType string
+type MetaType map[interface{}]interface{}
+type CommentType string
+type MarkerType string
+type IntMarkerType int
+type ReferenceType string
+type IntReferenceType int
+type SNanType float64
 
-type Marker string
-type Reference string
+func Nil() NilType {
+	return NilType("*NIL*")
+}
 
-func asList(values ...interface{}) []interface{} {
+func Nan() float64 {
+	return math.NaN()
+}
+
+func SNan() SNanType {
+	return SNanType(math.NaN())
+}
+
+func Inf() float64 {
+	return math.Inf(1)
+}
+
+func NInf() float64 {
+	return math.Inf(-1)
+}
+
+func List(values ...interface{}) []interface{} {
 	return values
 }
 
-func asMap(values ...interface{}) map[interface{}]interface{} {
+func Map(values ...interface{}) map[interface{}]interface{} {
 	result := make(map[interface{}]interface{})
 	var key interface{}
 	for i, v := range values {
@@ -38,8 +63,8 @@ func asMap(values ...interface{}) map[interface{}]interface{} {
 	return result
 }
 
-func asMetadataMap(values ...interface{}) MetadataMap {
-	result := make(MetadataMap)
+func Meta(values ...interface{}) MetaType {
+	result := make(MetaType)
 	var key interface{}
 	for i, v := range values {
 		if i&1 == 0 {
@@ -51,27 +76,31 @@ func asMetadataMap(values ...interface{}) MetadataMap {
 	return result
 }
 
-func asComment(value string) Comment {
-	return Comment(value)
+func Bytes(values ...byte) []byte {
+	return values
 }
 
-func asMarker(value string) Marker {
-	return Marker(value)
+func Comment(value string) CommentType {
+	return CommentType(value)
 }
 
-func asIntMarker(value int) Marker {
-	return Marker(string(value))
+func Marker(value string) MarkerType {
+	return MarkerType(value)
 }
 
-func asReference(value string) Reference {
-	return Reference(value)
+func IntMarker(value int) IntMarkerType {
+	return IntMarkerType(value)
 }
 
-func asIntReference(value int) Reference {
-	return Reference(string(value))
+func Reference(value string) ReferenceType {
+	return ReferenceType(value)
 }
 
-func asURL(str string) *url.URL {
+func IntReference(value int) IntReferenceType {
+	return IntReferenceType(value)
+}
+
+func URI(str string) *url.URL {
 	url, err := url.Parse(str)
 	if err != nil {
 		url, err = url.Parse("http://parse.error")
@@ -79,7 +108,7 @@ func asURL(str string) *url.URL {
 	return url
 }
 
-func asDate(year int, month int, day int) time.Time {
+func Date(year int, month int, day int) time.Time {
 	location := time.UTC
 	hour := 0
 	minute := 0
@@ -88,7 +117,7 @@ func asDate(year int, month int, day int) time.Time {
 	return time.Date(year, time.Month(month), day, hour, minute, second, nanosecond, location)
 }
 
-func asTime(hour int, minute int, second int, nanosecond int, timezone string) time.Time {
+func Time(hour int, minute int, second int, nanosecond int, timezone string) time.Time {
 	location, err := time.LoadLocation(timezone)
 	if err != nil {
 		panic(err)
@@ -97,13 +126,17 @@ func asTime(hour int, minute int, second int, nanosecond int, timezone string) t
 	return time.Date(baseTime.Year(), baseTime.Month(), baseTime.Day(), hour, minute, second, nanosecond, location)
 }
 
-func asTimestamp(year int, month int, day int, hour int, minute int, second int, nanosecond int, timezone string) time.Time {
+func TS(year int, month int, day int, hour int, minute int, second int, nanosecond int, timezone string) time.Time {
 	location, err := time.LoadLocation(timezone)
 	if err != nil {
 		panic(err)
 	}
 	return time.Date(year, time.Month(month), day, hour, minute, second, nanosecond, location)
 }
+
+// ============================================================================
+// General
+// ============================================================================
 
 var stringGeneratorChars = [...]byte{
 	'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
@@ -131,35 +164,18 @@ func getPanicContents(function func()) (recovered interface{}) {
 	return recovered
 }
 
-func assertPanics(t *testing.T, function func()) {
-	if getPanicContents(function) == nil {
-		t.Errorf("Should have panicked but didn't")
+func ShortCircuit(errors ...error) error {
+	for _, err := range errors {
+		if err != nil {
+			return err
+		}
 	}
+	return nil
 }
 
-func assertDoesNotPanic(t *testing.T, function func()) {
-	if result := getPanicContents(function); result != nil {
-		t.Errorf("Should not have panicked, but did: %v", result)
-	}
-}
-
-func assertSuccess(t *testing.T, err error) {
-	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
-	}
-}
-
-func assertFailure(t *testing.T, err error) {
-	if err == nil {
-		t.Errorf("Unexpected success")
-	}
-}
-
+// ============================================================================
 // Decoder
-
-type Nil string
-
-var NilValue Nil = Nil("*NIL*")
+// ============================================================================
 
 type arrayType int
 
@@ -176,7 +192,7 @@ type testCallbacks struct {
 	containerStack     []interface{}
 	currentList        []interface{}
 	currentMap         map[interface{}]interface{}
-	currentMetadataMap MetadataMap
+	currentMetadataMap MetaType
 	currentArray       []byte
 	currentArrayType   arrayType
 }
@@ -228,8 +244,8 @@ func (this *testCallbacks) setCurrentContainer() {
 			this.currentMap = container.(map[interface{}]interface{})
 		case *map[interface{}]interface{}:
 			this.currentMap = *(container.(*map[interface{}]interface{}))
-		case MetadataMap:
-			this.currentMetadataMap = container.(MetadataMap)
+		case MetaType:
+			this.currentMetadataMap = container.(MetaType)
 		default:
 			panic(fmt.Errorf("Unknown container type: %v", container))
 		}
@@ -273,7 +289,7 @@ func (this *testCallbacks) mapBegin() {
 }
 
 func (this *testCallbacks) metadataMapBegin() {
-	this.containerBegin(make(MetadataMap))
+	this.containerBegin(make(MetaType))
 }
 
 func (this *testCallbacks) arrayBegin(newArrayType arrayType) {
@@ -296,8 +312,12 @@ func (this *testCallbacks) arrayEnd() error {
 			return err
 		}
 		this.storeValue(uri)
-	} else {
+	} else if this.currentArrayType == arrayTypeComment {
+		this.storeValue(Comment(string(array)))
+	} else if this.currentArrayType == arrayTypeString {
 		this.storeValue(string(array))
+	} else {
+		return fmt.Errorf("Unhandled array type: %v", this.currentArrayType)
 	}
 	return nil
 }
@@ -310,7 +330,7 @@ func (this *testCallbacks) getValue() interface{} {
 }
 
 func (this *testCallbacks) OnNil() error {
-	this.storeValue(NilValue)
+	this.storeValue(Nil())
 	return nil
 }
 
@@ -340,12 +360,12 @@ func (this *testCallbacks) OnDecimalFloat(significand int64, exponent int) error
 }
 
 func (this *testCallbacks) OnDate(year, month, day int) error {
-	this.storeValue(asDate(year, month, day))
+	this.storeValue(Date(year, month, day))
 	return nil
 }
 
 func (this *testCallbacks) OnTimeTZ(hour, minute, second, nanosecond int, tz string) error {
-	this.storeValue(asTime(hour, minute, second, nanosecond, tz))
+	this.storeValue(Time(hour, minute, second, nanosecond, tz))
 	return nil
 }
 
@@ -358,7 +378,7 @@ func (this *testCallbacks) OnTimeLoc(hour, minute, second, nanosecond int, latit
 }
 
 func (this *testCallbacks) OnTimestampTZ(year, month, day, hour, minute, second, nanosecond int, tz string) error {
-	this.storeValue(asTimestamp(year, month, day, hour, minute, second, nanosecond, tz))
+	this.storeValue(TS(year, month, day, hour, minute, second, nanosecond, tz))
 	return nil
 }
 
@@ -419,12 +439,12 @@ func (this *testCallbacks) OnArrayEnd() error {
 }
 
 func (this *testCallbacks) OnMarker(id string) error {
-	this.storeValue(asMarker(id))
+	this.storeValue(MarkerType(id))
 	return nil
 }
 
 func (this *testCallbacks) OnReference(id string) error {
-	this.storeValue(asReference(id))
+	this.storeValue(ReferenceType(id))
 	return nil
 }
 
@@ -465,6 +485,34 @@ func decodeDocument(maxDepth int, encoded []byte) (result interface{}, err error
 func tryDecode(maxDepth int, encoded []byte) error {
 	_, err := decodeDocument(maxDepth, encoded)
 	return err
+}
+
+// ============================================================================
+// Assertions
+// ============================================================================
+
+func assertPanics(t *testing.T, function func()) {
+	if getPanicContents(function) == nil {
+		t.Errorf("Should have panicked but didn't")
+	}
+}
+
+func assertDoesNotPanic(t *testing.T, function func()) {
+	if result := getPanicContents(function); result != nil {
+		t.Errorf("Should not have panicked, but did: %v", result)
+	}
+}
+
+func assertSuccess(t *testing.T, err error) {
+	if err != nil {
+		t.Errorf("Unexpected error: %v", err)
+	}
+}
+
+func assertFailure(t *testing.T, err error) {
+	if err == nil {
+		t.Errorf("Unexpected success")
+	}
 }
 
 func assertDecoded(t *testing.T, encoded string, expected interface{}) {
@@ -583,12 +631,3 @@ func assertDecodeFails(t *testing.T, encoded string) {
 // 		t.Errorf("Expected %t: <%v>, actual %t: <%v>", expected, expected, actual, actual)
 // 	}
 // }
-
-func ShortCircuit(errors ...error) error {
-	for _, err := range errors {
-		if err != nil {
-			return err
-		}
-	}
-	return nil
-}
