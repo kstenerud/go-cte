@@ -5,6 +5,21 @@ import (
     "math"
 )
 
+type ContainerType int
+const (
+	ContainerTypeList = ContainerType(iota)
+	ContainerTypeMap
+	ContainerTypeMetadataMap
+)
+
+type ArrayType int
+const (
+	ArrayTypeBinary = ArrayType(iota)
+	ArrayTypeString
+	ArrayTypeURI
+	ArrayTypeComment
+)
+
 type CteDecoderCallbacks interface {
     OnNil() error
     OnBool(value bool) error
@@ -17,18 +32,11 @@ type CteDecoderCallbacks interface {
     OnTimeLoc(hour, minute, second, nanosecond int, latitude, longitude float32) error
     OnTimestampTZ(year, month, day, hour, minute, second, nanosecond int, tz string) error
     OnTimestampLoc(year, month, day, hour, minute, second, nanosecond int, latitude, longitude float32) error
-    OnListBegin() error
-    OnMapBegin() error
-    OnMetadataMapBegin() error
+    OnContainerBegin(containerType ContainerType) error
     OnContainerEnd() error
-    OnBytesBegin() error
-    OnStringBegin() error
-    OnURIBegin() error
-    OnCommentBegin() error
+    OnArrayBegin(arrayType ArrayType) error
     OnArrayData(bytes []byte) error
     OnArrayEnd() error
-    OnMarker(id string) error
-    OnReference(id string) error
 }
 
 %%{
@@ -265,7 +273,7 @@ type CteDecoderCallbacks interface {
     };
 
     list = '[' @{
-        err = callbacks.OnListBegin()
+        err = callbacks.OnContainerBegin(ContainerTypeList)
         if err != nil {
             fbreak;
         }
@@ -273,7 +281,7 @@ type CteDecoderCallbacks interface {
     };
 
     map = '{' @{
-        err = callbacks.OnMapBegin()
+        err = callbacks.OnContainerBegin(ContainerTypeMap)
         if err != nil {
             fbreak;
         }
@@ -281,7 +289,7 @@ type CteDecoderCallbacks interface {
     };
 
     metadata_map = '(' @{
-        err = callbacks.OnMetadataMapBegin()
+        err = callbacks.OnContainerBegin(ContainerTypeMetadataMap)
         if err != nil {
             fbreak;
         }
@@ -290,7 +298,7 @@ type CteDecoderCallbacks interface {
 
     comment = "//" @{
         this.arrayStart = fpc + 1
-        err = callbacks.OnCommentBegin()
+        err = callbacks.OnArrayBegin(ArrayTypeComment)
         if err != nil {
             fbreak;
         }
@@ -299,7 +307,7 @@ type CteDecoderCallbacks interface {
 
     multiline_comment = "/*" @{
         if this.commentDepth == 0 {
-            err = callbacks.OnCommentBegin()
+            err = callbacks.OnArrayBegin(ArrayTypeComment)
         } else {
             err = callbacks.OnArrayData(this.data[this.arrayStart:fpc+1])
         }
@@ -313,7 +321,7 @@ type CteDecoderCallbacks interface {
 
     string = '"' @{
         this.arrayStart = fpc + 1
-        err = callbacks.OnStringBegin()
+        err = callbacks.OnArrayBegin(ArrayTypeString)
         if err != nil {
             fbreak;
         }
@@ -324,7 +332,7 @@ type CteDecoderCallbacks interface {
         this.arrayStart = fpc - utfCharWidth
     } %{
         if this.data[fpc-1] != '"' {
-            err = callbacks.OnStringBegin()
+            err = callbacks.OnArrayBegin(ArrayTypeString)
             if err != nil {
                 fmt.Printf("Err %v\n", err)
                 fbreak;
@@ -344,7 +352,7 @@ type CteDecoderCallbacks interface {
 
     uri = 'u' '"' @{
         this.arrayStart = fpc + 1
-        err = callbacks.OnURIBegin()
+        err = callbacks.OnArrayBegin(ArrayTypeURI)
         if err != nil {
             fbreak;
         }
@@ -352,7 +360,7 @@ type CteDecoderCallbacks interface {
     };
 
     binary_hex = 'h' '"' @{
-        err = callbacks.OnBytesBegin()
+        err = callbacks.OnArrayBegin(ArrayTypeBinary)
         if err != nil {
             fbreak;
         }
@@ -360,7 +368,7 @@ type CteDecoderCallbacks interface {
     };
 
     binary_base64 = 'b' '"' @{
-        err = callbacks.OnBytesBegin()
+        err = callbacks.OnArrayBegin(ArrayTypeBinary)
         if err != nil {
             fbreak;
         }

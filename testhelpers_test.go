@@ -194,102 +194,109 @@ func ShortCircuit(errors ...error) error {
 // Decoder
 // ============================================================================
 
-type arrayType int
-
-const (
-	arrayTypeNone arrayType = iota
-	arrayTypeBytes
-	arrayTypeString
-	arrayTypeURI
-	arrayTypeComment
-)
-
 type testCallbacks struct {
-	nextValue          interface{}
-	containerStack     []interface{}
-	currentList        []interface{}
-	currentMap         map[interface{}]interface{}
-	currentMetadataMap MetaType
-	currentArray       []byte
-	currentArrayType   arrayType
-	currentMarker      *MarkerType
+	nextValue            interface{}
+	containerStack       []interface{}
+	currentList          []interface{}
+	currentMap           map[interface{}]interface{}
+	currentMetadataMap   MetaType
+	currentArray         []byte
+	currentArrayType     ArrayType
+	currentMarker        *MarkerType
+	currentContainerType ContainerType
+	isInArray            bool
+	isInContainer        bool
+	isInMarker           bool
 }
 
-func (this *testCallbacks) storeValue(value interface{}) {
-	if this.currentMarker != nil {
+func (this *testCallbacks) storeValue(value interface{}) error {
+	if this.isInMarker {
 		this.currentMarker.reference = value
 		this.currentMarker = nil
-		return
+		this.isInMarker = false
+		return nil
 	}
 
-	if this.currentList != nil {
-		this.currentList = append(this.currentList, value)
-		return
-	}
-
-	if this.currentMap != nil {
-		if this.nextValue == nil {
-			this.nextValue = value
-		} else {
-			this.currentMap[this.nextValue] = value
-			this.nextValue = nil
+	if this.isInContainer {
+		switch this.currentContainerType {
+		case ContainerTypeList:
+			this.currentList = append(this.currentList, value)
+		case ContainerTypeMap:
+			if this.nextValue == nil {
+				this.nextValue = value
+			} else {
+				this.currentMap[this.nextValue] = value
+				this.nextValue = nil
+			}
+		case ContainerTypeMetadataMap:
+			if this.nextValue == nil {
+				this.nextValue = value
+			} else {
+				this.currentMetadataMap[this.nextValue] = value
+				this.nextValue = nil
+			}
 		}
-		return
-	}
-
-	if this.currentMetadataMap != nil {
-		if this.nextValue == nil {
-			this.nextValue = value
-		} else {
-			this.currentMetadataMap[this.nextValue] = value
-			this.nextValue = nil
-		}
-		return
+		return nil
 	}
 
 	if this.nextValue != nil {
-		panic(fmt.Errorf("Top level object already exists: %v", this.nextValue))
+		return fmt.Errorf("Top level object already exists: %v", this.nextValue)
 	}
 	this.nextValue = value
+	return nil
 }
 
-func (this *testCallbacks) setCurrentContainer() {
+func (this *testCallbacks) setCurrentContainer() error {
 	lastEntry := len(this.containerStack) - 1
 	this.currentList = nil
 	this.currentMap = nil
-	if lastEntry >= 0 {
+	this.currentMetadataMap = nil
+
+	this.isInContainer = lastEntry >= 0
+	if this.isInContainer {
 		container := this.containerStack[lastEntry]
 		switch container.(type) {
 		case []interface{}:
 			this.currentList = container.([]interface{})
+			this.currentContainerType = ContainerTypeList
 		case *[]interface{}:
 			this.currentList = *(container.(*[]interface{}))
+			this.currentContainerType = ContainerTypeList
 		case map[interface{}]interface{}:
 			this.currentMap = container.(map[interface{}]interface{})
+			this.currentContainerType = ContainerTypeMap
 		case *map[interface{}]interface{}:
 			this.currentMap = *(container.(*map[interface{}]interface{}))
+			this.currentContainerType = ContainerTypeMap
 		case MetaType:
 			this.currentMetadataMap = container.(MetaType)
+			this.currentContainerType = ContainerTypeMetadataMap
 		default:
-			panic(fmt.Errorf("Unknown container type: %v", container))
+			return fmt.Errorf("Unknown container type: %v", container)
 		}
 	}
+	return nil
 }
 
-func (this *testCallbacks) containerEnd() {
+func (this *testCallbacks) containerEnd() error {
 	var item interface{}
 
-	if this.currentList != nil {
+	if !this.isInContainer {
+		return fmt.Errorf("Called containerEnd() while not in a container")
+	}
+
+	switch this.currentContainerType {
+	case ContainerTypeList:
 		item = this.currentList
 		this.currentList = nil
-	} else if this.currentMap != nil {
+	case ContainerTypeMap:
 		item = this.currentMap
 		this.currentMap = nil
-	} else if this.currentMetadataMap != nil {
+	case ContainerTypeMetadataMap:
 		item = this.currentMetadataMap
-		this.currentMap = nil
-	} else {
-		panic("Ended unhandled container type")
+		this.currentMetadataMap = nil
+	default:
+		return fmt.Errorf("Unhandled container type: %v", this.currentContainerType)
 	}
 	length := len(this.containerStack)
 	if length > 0 {
@@ -297,53 +304,57 @@ func (this *testCallbacks) containerEnd() {
 		this.setCurrentContainer()
 	}
 	this.storeValue(item)
+	return nil
 }
 
-func (this *testCallbacks) containerBegin(container interface{}) {
+func (this *testCallbacks) containerBegin(containerType ContainerType) error {
+	var container interface{}
+	switch containerType {
+	case ContainerTypeList:
+		container = make([]interface{}, 0)
+	case ContainerTypeMap:
+		container = make(map[interface{}]interface{})
+	case ContainerTypeMetadataMap:
+		container = make(MetaType)
+	default:
+		return fmt.Errorf("Unhandled container type: %v", containerType)
+	}
 	this.containerStack = append(this.containerStack, container)
-	this.setCurrentContainer()
+	return this.setCurrentContainer()
 }
 
-func (this *testCallbacks) listBegin() {
-	this.containerBegin(make([]interface{}, 0))
-}
-
-func (this *testCallbacks) mapBegin() {
-	this.containerBegin(make(map[interface{}]interface{}))
-}
-
-func (this *testCallbacks) metadataMapBegin() {
-	this.containerBegin(make(MetaType))
-}
-
-func (this *testCallbacks) arrayBegin(newArrayType arrayType) {
-	this.currentArray = make([]byte, 0, 10)
+func (this *testCallbacks) arrayBegin(newArrayType ArrayType) error {
+	this.currentArray = make([]byte, 0, 100)
 	this.currentArrayType = newArrayType
+	this.isInArray = true
+	return nil
 }
 
-func (this *testCallbacks) arrayData(data []byte) {
+func (this *testCallbacks) arrayData(data []byte) error {
 	this.currentArray = append(this.currentArray, data...)
+	return nil
 }
 
 func (this *testCallbacks) arrayEnd() error {
 	array := this.currentArray
 	this.currentArray = nil
-	if this.currentArrayType == arrayTypeBytes {
-		this.storeValue(array)
-	} else if this.currentArrayType == arrayTypeURI {
+	this.isInArray = false
+	switch this.currentArrayType {
+	case ArrayTypeBinary:
+		return this.storeValue(array)
+	case ArrayTypeString:
+		return this.storeValue(string(array))
+	case ArrayTypeURI:
 		uri, err := url.Parse(string(array))
 		if err != nil {
 			return err
 		}
-		this.storeValue(uri)
-	} else if this.currentArrayType == arrayTypeComment {
-		this.storeValue(Comment(string(array)))
-	} else if this.currentArrayType == arrayTypeString {
-		this.storeValue(string(array))
-	} else {
+		return this.storeValue(uri)
+	case ArrayTypeComment:
+		return this.storeValue(Comment(string(array)))
+	default:
 		return fmt.Errorf("Unhandled array type: %v", this.currentArrayType)
 	}
-	return nil
 }
 
 func (this *testCallbacks) getValue() interface{} {
@@ -354,127 +365,86 @@ func (this *testCallbacks) getValue() interface{} {
 }
 
 func (this *testCallbacks) OnNil() error {
-	this.storeValue(Nil())
-	return nil
+	return this.storeValue(Nil())
 }
 
 func (this *testCallbacks) OnBool(value bool) error {
-	this.storeValue(value)
-	return nil
+	return this.storeValue(value)
 }
 
 func (this *testCallbacks) OnPositiveInt(value uint64) error {
-	this.storeValue(value)
-	return nil
+	return this.storeValue(value)
 }
 
 func (this *testCallbacks) OnNegativeInt(value uint64) error {
-	this.storeValue(-int64(value))
-	return nil
+	return this.storeValue(-int64(value))
 }
 
 func (this *testCallbacks) OnFloat(value float64) error {
-	this.storeValue(value)
-	return nil
+	return this.storeValue(value)
 }
 
 func (this *testCallbacks) OnDecimalFloat(significand int64, exponent int) error {
-	this.storeValue(float64(significand) * math.Pow10(exponent))
-	return nil
+	return this.storeValue(float64(significand) * math.Pow10(exponent))
 }
 
 func (this *testCallbacks) OnDate(year, month, day int) error {
-	this.storeValue(Date(year, month, day))
-	return nil
+	return this.storeValue(Date(year, month, day))
 }
 
 func (this *testCallbacks) OnTimeTZ(hour, minute, second, nanosecond int, tz string) error {
-	this.storeValue(Time(hour, minute, second, nanosecond, tz))
-	return nil
+	return this.storeValue(Time(hour, minute, second, nanosecond, tz))
 }
 
 func (this *testCallbacks) OnTimeLoc(hour, minute, second, nanosecond int, latitude, longitude float32) error {
 	// TODO: Something?
 	baseDate := time.Now()
 	loc := time.UTC
-	this.storeValue(time.Date(baseDate.Year(), baseDate.Month(), baseDate.Day(), hour, minute, second, nanosecond, loc))
-	return nil
+	return this.storeValue(time.Date(baseDate.Year(), baseDate.Month(), baseDate.Day(), hour, minute, second, nanosecond, loc))
 }
 
 func (this *testCallbacks) OnTimestampTZ(year, month, day, hour, minute, second, nanosecond int, tz string) error {
-	this.storeValue(TS(year, month, day, hour, minute, second, nanosecond, tz))
-	return nil
+	return this.storeValue(TS(year, month, day, hour, minute, second, nanosecond, tz))
 }
 
 func (this *testCallbacks) OnTimestampLoc(year, month, day, hour, minute, second, nanosecond int, latitude, longitude float32) error {
 	// TODO: Something?
 	loc := time.UTC
-	this.storeValue(time.Date(year, time.Month(month), day, hour, minute, second, nanosecond, loc))
-	return nil
+	return this.storeValue(time.Date(year, time.Month(month), day, hour, minute, second, nanosecond, loc))
 }
 
-func (this *testCallbacks) OnListBegin() error {
-	this.listBegin()
-	return nil
-}
-
-func (this *testCallbacks) OnMapBegin() error {
-	this.mapBegin()
-	return nil
-}
-
-func (this *testCallbacks) OnMetadataMapBegin() error {
-	this.metadataMapBegin()
-	return nil
+func (this *testCallbacks) OnContainerBegin(containerType ContainerType) error {
+	return this.containerBegin(containerType)
 }
 
 func (this *testCallbacks) OnContainerEnd() error {
-	this.containerEnd()
-	return nil
+	return this.containerEnd()
 }
 
-func (this *testCallbacks) OnStringBegin() error {
-	this.arrayBegin(arrayTypeString)
-	return nil
-}
-
-func (this *testCallbacks) OnCommentBegin() error {
-	this.arrayBegin(arrayTypeComment)
-	return nil
-}
-
-func (this *testCallbacks) OnURIBegin() error {
-	this.arrayBegin(arrayTypeURI)
-	return nil
-}
-
-func (this *testCallbacks) OnBytesBegin() error {
-	this.arrayBegin(arrayTypeBytes)
-	return nil
+func (this *testCallbacks) OnArrayBegin(arrayType ArrayType) error {
+	return this.arrayBegin(arrayType)
 }
 
 func (this *testCallbacks) OnArrayData(bytes []byte) error {
-	this.arrayData(bytes)
-	return nil
+	return this.arrayData(bytes)
 }
 
 func (this *testCallbacks) OnArrayEnd() error {
 	return this.arrayEnd()
 }
 
-func (this *testCallbacks) OnMarker(id string) error {
-	if this.currentMarker != nil {
-		return fmt.Errorf("Already in a marker")
-	}
-	this.currentMarker = PartialMarker(id)
-	this.storeValue(this.currentMarker)
-	return nil
-}
+// func (this *testCallbacks) OnMarker(id string) error {
+// 	if this.currentMarker != nil {
+// 		return fmt.Errorf("Already in a marker")
+// 	}
+//  this.isInMarker = true
+// 	this.currentMarker = PartialMarker(id)
+// 	return this.storeValue(this.currentMarker)
+// }
 
-func (this *testCallbacks) OnReference(id string) error {
-	this.storeValue(ReferenceType(id))
-	return nil
-}
+// func (this *testCallbacks) OnReference(id string) error {
+// 	return this.storeValue(ReferenceType(id))
+// }
 
 func decodeDocument(maxDepth int, encoded []byte) (result interface{}, err error) {
 	callbacks := new(testCallbacks)
