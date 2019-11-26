@@ -34,7 +34,7 @@ type CteDecoderCallbacks interface {
 }
 
 
-//line decoder.rl:584
+//line decoder.rl:582
 
 
 
@@ -1665,7 +1665,7 @@ const cte_en_metadata_map_iterate int = 401
 const cte_en_main int = 1
 
 
-//line decoder.rl:588
+//line decoder.rl:586
 
 type Parser struct {
     cs int // Current Ragel state
@@ -2171,12 +2171,10 @@ utfCharWidth = 1
 //line decoder.rl:323
 
         this.arrayStart = p - utfCharWidth
-        fmt.Printf("#### utfCharWidth = %v\n", utfCharWidth)
     
 		case 41:
-//line decoder.rl:326
+//line decoder.rl:325
 
-        fmt.Printf("#### unquoted\n")
         if this.data[p-1] != '"' {
             err = callbacks.OnStringBegin()
             if err != nil {
@@ -2199,7 +2197,7 @@ utfCharWidth = 1
         }
     
 		case 42:
-//line decoder.rl:347
+//line decoder.rl:345
 
         this.arrayStart = p + 1
         err = callbacks.OnURIBegin()
@@ -2211,7 +2209,7 @@ utfCharWidth = 1
 
     
 		case 43:
-//line decoder.rl:356
+//line decoder.rl:354
 
         err = callbacks.OnBytesBegin()
         if err != nil {
@@ -2222,7 +2220,7 @@ utfCharWidth = 1
 
     
 		case 44:
-//line decoder.rl:364
+//line decoder.rl:362
 
         err = callbacks.OnBytesBegin()
         if err != nil {
@@ -2233,7 +2231,7 @@ utfCharWidth = 1
 
     
 		case 45:
-//line decoder.rl:380
+//line decoder.rl:378
 
         err = callbacks.OnArrayData(this.data[this.arrayStart:p])
         if err != nil {
@@ -2250,7 +2248,7 @@ goto _again
 
     
 		case 46:
-//line decoder.rl:392
+//line decoder.rl:390
 
         err = callbacks.OnArrayData(this.data[this.arrayStart:p-1])
         if err != nil {
@@ -2271,7 +2269,7 @@ goto _again
 
     
 		case 47:
-//line decoder.rl:411
+//line decoder.rl:409
 
                 err = this.flushAndAddEscapedCharacter(p-1, '\\', callbacks)
                 if err != nil {
@@ -2280,7 +2278,7 @@ goto _again
                 }
             
 		case 48:
-//line decoder.rl:417
+//line decoder.rl:415
 
                 err = this.flushAndAddEscapedCharacter(p-1, '\n', callbacks)
                 if err != nil {
@@ -2289,7 +2287,7 @@ goto _again
                 }
             
 		case 49:
-//line decoder.rl:423
+//line decoder.rl:421
 
                 err = this.flushAndAddEscapedCharacter(p-1, '\r', callbacks)
                 if err != nil {
@@ -2298,7 +2296,7 @@ goto _again
                 }
             
 		case 50:
-//line decoder.rl:429
+//line decoder.rl:427
 
                 err = this.flushAndAddEscapedCharacter(p-1, '\t', callbacks)
                 if err != nil {
@@ -2307,7 +2305,7 @@ goto _again
                 }
             
 		case 51:
-//line decoder.rl:435
+//line decoder.rl:433
 
                 err = this.flushAndAddEscapedCharacter(p-1, '"', callbacks)
                 if err != nil {
@@ -2316,12 +2314,12 @@ goto _again
                 }
             
 		case 52:
-//line decoder.rl:441
+//line decoder.rl:439
 
                 return false, fmt.Errorf("\\%c: Illegal escape encoding", this.data[p])
             
 		case 53:
-//line decoder.rl:448
+//line decoder.rl:446
 
         err = callbacks.OnArrayData(this.data[this.arrayStart:p])
         if err != nil {
@@ -2338,7 +2336,7 @@ goto _again
 
     
 		case 54:
-//line decoder.rl:460
+//line decoder.rl:458
 
         err = callbacks.OnArrayData(this.data[this.arrayStart:p])
         if err != nil {
@@ -2355,32 +2353,32 @@ goto _again
 
     
 		case 55:
-//line decoder.rl:472
+//line decoder.rl:470
 
         this.binaryNext = ( this.data[p] - '0') << 4
     
 		case 56:
-//line decoder.rl:475
+//line decoder.rl:473
 
         this.binaryNext = ( this.data[p] - 'a' + 10) << 4
     
 		case 57:
-//line decoder.rl:478
+//line decoder.rl:476
 
         this.binaryNext |=  this.data[p] - '0'
     
 		case 58:
-//line decoder.rl:481
+//line decoder.rl:479
 
         this.binaryNext |=  this.data[p] - 'a' + 10
     
 		case 59:
-//line decoder.rl:484
+//line decoder.rl:482
 
         this.binaryData = append(this.binaryData, this.binaryNext)
     
 		case 60:
-//line decoder.rl:488
+//line decoder.rl:486
 
         err = callbacks.OnArrayData(this.binaryData)
         if err != nil {
@@ -2398,32 +2396,32 @@ goto _again
 
     
 		case 61:
-//line decoder.rl:501
+//line decoder.rl:499
 
         this.binaryAccumulator = (this.binaryAccumulator << 6) | uint( this.data[p] - 'A')
     
 		case 62:
-//line decoder.rl:504
+//line decoder.rl:502
 
         this.binaryAccumulator = (this.binaryAccumulator << 6) | uint( this.data[p] - 'a' + 26)
     
 		case 63:
-//line decoder.rl:507
+//line decoder.rl:505
 
         this.binaryAccumulator = (this.binaryAccumulator << 6) | uint( this.data[p] - '0' + 52)
     
 		case 64:
-//line decoder.rl:510
+//line decoder.rl:508
 
         this.binaryAccumulator = (this.binaryAccumulator << 6) | 62
     
 		case 65:
-//line decoder.rl:513
+//line decoder.rl:511
 
         this.binaryAccumulator = (this.binaryAccumulator << 6) | 63
     
 		case 66:
-//line decoder.rl:517
+//line decoder.rl:515
 
         this.base64Digits++
         if this.base64Digits == 4 {
@@ -2435,7 +2433,7 @@ goto _again
         }
     
 		case 67:
-//line decoder.rl:528
+//line decoder.rl:526
 
         switch this.base64Digits {
             case 0:
@@ -2452,7 +2450,7 @@ goto _again
         this.base64Digits = 0
     
 		case 68:
-//line decoder.rl:544
+//line decoder.rl:542
 
         err = callbacks.OnArrayData(this.binaryData)
         if err != nil {
@@ -2470,7 +2468,7 @@ goto _again
 
     
 		case 69:
-//line decoder.rl:557
+//line decoder.rl:555
 
         err = callbacks.OnContainerEnd()
         if err != nil {
@@ -2482,7 +2480,7 @@ goto _again
 
     
 		case 70:
-//line decoder.rl:565
+//line decoder.rl:563
 
         err = callbacks.OnContainerEnd()
         if err != nil {
@@ -2494,7 +2492,7 @@ goto _again
 
     
 		case 71:
-//line decoder.rl:573
+//line decoder.rl:571
 
         err = callbacks.OnContainerEnd()
         if err != nil {
@@ -2505,7 +2503,7 @@ goto _again
 goto _again
 
     
-//line decoder.go:2509
+//line decoder.go:2507
 		}
 	}
 
@@ -2660,12 +2658,10 @@ _again:
 //line decoder.rl:323
 
         this.arrayStart = p - utfCharWidth
-        fmt.Printf("#### utfCharWidth = %v\n", utfCharWidth)
     
 			case 41:
-//line decoder.rl:326
+//line decoder.rl:325
 
-        fmt.Printf("#### unquoted\n")
         if this.data[p-1] != '"' {
             err = callbacks.OnStringBegin()
             if err != nil {
@@ -2687,7 +2683,7 @@ _again:
             }
         }
     
-//line decoder.go:2691
+//line decoder.go:2687
 			}
 		}
 	}
@@ -2695,7 +2691,7 @@ _again:
 	_out: {}
 	}
 
-//line decoder.rl:667
+//line decoder.rl:665
 
 
     if this.ts > 0 {

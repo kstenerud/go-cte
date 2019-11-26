@@ -20,11 +20,13 @@ import (
 type NilType string
 type MetaType map[interface{}]interface{}
 type CommentType string
-type MarkerType string
-type IntMarkerType int
-type ReferenceType string
-type IntReferenceType int
+type ReferenceType interface{}
 type SNanType float64
+
+type MarkerType struct {
+	id        interface{}
+	reference interface{}
+}
 
 func Nil() NilType {
 	return NilType("*NIL*")
@@ -84,20 +86,35 @@ func Comment(value string) CommentType {
 	return CommentType(value)
 }
 
-func Marker(value string) MarkerType {
-	return MarkerType(value)
+func PartialMarker(id interface{}) (marker *MarkerType) {
+	switch id.(type) {
+	case int:
+	case string:
+	default:
+		panic(fmt.Errorf("Unknown marker ID type: %v", reflect.TypeOf(id)))
+	}
+
+	marker = new(MarkerType)
+	marker.id = id
+
+	return marker
 }
 
-func IntMarker(value int) IntMarkerType {
-	return IntMarkerType(value)
+func Marker(id interface{}, reference interface{}) (marker *MarkerType) {
+	marker = PartialMarker(id)
+	marker.reference = reference
+
+	return marker
 }
 
-func Reference(value string) ReferenceType {
-	return ReferenceType(value)
-}
-
-func IntReference(value int) IntReferenceType {
-	return IntReferenceType(value)
+func Reference(id interface{}) ReferenceType {
+	switch id.(type) {
+	case int:
+	case string:
+	default:
+		panic(fmt.Errorf("Unknown reference ID type: %v", reflect.TypeOf(id)))
+	}
+	return ReferenceType(id)
 }
 
 func URI(str string) *url.URL {
@@ -195,9 +212,16 @@ type testCallbacks struct {
 	currentMetadataMap MetaType
 	currentArray       []byte
 	currentArrayType   arrayType
+	currentMarker      *MarkerType
 }
 
 func (this *testCallbacks) storeValue(value interface{}) {
+	if this.currentMarker != nil {
+		this.currentMarker.reference = value
+		this.currentMarker = nil
+		return
+	}
+
 	if this.currentList != nil {
 		this.currentList = append(this.currentList, value)
 		return
@@ -439,7 +463,11 @@ func (this *testCallbacks) OnArrayEnd() error {
 }
 
 func (this *testCallbacks) OnMarker(id string) error {
-	this.storeValue(MarkerType(id))
+	if this.currentMarker != nil {
+		return fmt.Errorf("Already in a marker")
+	}
+	this.currentMarker = PartialMarker(id)
+	this.storeValue(this.currentMarker)
 	return nil
 }
 
