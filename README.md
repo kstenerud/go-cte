@@ -1,25 +1,7 @@
-Concise Text Encoding
-=======================
-
-A go implementation of [concise text encoding](https://github.com/kstenerud/concise-text/encoding/blob/master/cte-specification.md).
-
-Concise Text Encoding is a general purpose, human-readable, compact representation of semi-structured hierarchical data.
+**Note**: This repo has been deprecated! The new materials are:
 
 
-Building & Testing
-------------------
-
-```
-go generate
-go build
-go test
-```
-
-
-Library Usage
--------------
-
-TODO
-
-```golang
-```
+* Website: https://concise-encoding.org/
+* Specification: https://github.com/kstenerud/concise-encoding
+* Reference implementation: https://github.com/kstenerud/go-concise-encoding
+* Encoding tool: https://github.com/kstenerud/enctool
